@@ -5,7 +5,7 @@ import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 
 // https://vite.dev/config/
 export default defineConfig(({mode}) => {
-  const baseUrl = process.env.CF_PAGES_URL || mode === "development" ? "http://localhost:3000" : "https://sharedmodhelper.live";
+  const baseUrl = process.env.CF_PAGES_URL || (mode === "development" ? "http://localhost:3000" : "https://sharedmodhelper.live");
 
   return {
     plugins: [
