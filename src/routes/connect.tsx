@@ -5,7 +5,7 @@ export const Route = createFileRoute('/connect')({
   loader: async ctx => {
     if (!ctx.location.hash) throw "no hash"
 
-    const search = new URLSearchParams(location.hash)
+    const search = new URLSearchParams(ctx.location.hash)
     const token = search.get("access_token");
     if (!token) throw "no token"
 
