@@ -127,7 +127,7 @@ function Messages(messages: Message[]) {
 
 // The output of a query, this is here just for reference,
 // ============= Please remove on production =============
-const vals = [{
+/*const vals = [{
   "userId": 53888434,
   "userName": "ogprodigy",
   "modId": 1171922673,
@@ -181,4 +181,4 @@ const vals = [{
   "reason": "",
   "timestamp": 1730105566,
   "messages": []
-}]
+}]*/
