@@ -97,7 +97,7 @@ function picture(pictures: UserDataIndex | undefined, id: number) {
 
 function /*component*/ Channel() {
   const token = Cookies.get('twitch') //TODO: use context instead
-  const histories: History[] = useLoaderData({from: '/channel/$channelId'})
+  const histories: History[] = useLoaderData({from: '/channel/$channelId'}).slice(0, 100)
   const [chatter, setChatter] = useState(histories[0]?.userId as number | null)
 
   const historyMap: { [id: number]: number } = {}
