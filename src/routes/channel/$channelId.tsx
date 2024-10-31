@@ -211,6 +211,50 @@ function /*component*/ Channel() {
 function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | undefined, history: History }) {
   const exists = data?.[history.userId] != undefined
 
+  /*
+  const { channelId } = Route.useParams()
+  const token = Cookies.get('twitch')
+  const selfId = Cookies.get('self')
+
+  const ban = useMutation({
+    mutationFn: (banData) => {
+      return fetch(`https://api.twitch.tv/helix/moderation/bans?broadcaster_id=${channelId}&moderator_id=${selfId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Client-Id": CLIENT_ID,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data: banData }),
+      })
+    }
+  })
+
+  const poll = useMutation({
+    mutationFun: (pollData) => {
+      return fetch("https://api.twitch.tv/helix/polls", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Client-Id": CLIENT_ID,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          "broadcaster_id": channelId,
+          "title": pollData?.title ?? "Should we punish this chatter?",
+          "choices": [
+            {"title": "Yes"},
+            {"title": "No"}
+          ],
+          "duration": pollData?.duration ?? 60,
+          "channel_points_voting_enabled": pollData?.pointsEnabled ?? false,
+          "channel_points_per_vote": pollData?.channelPoints
+        })
+      })
+    }
+  })
+  */
+
   return (
     <>
       <div className={"px-8 pt-4"}>
