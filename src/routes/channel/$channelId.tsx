@@ -165,6 +165,10 @@ function /*component*/ Channel() {
       <div>
         <ResizablePanelGroup direction="horizontal" className={'min-h-[calc(100vh-3.5rem)]'}>
           <ResizablePanel defaultSize={20} className={""}>
+            <div className={"min-h-14 flex items-center pl-8 pr-4"}>
+              {histories[0] ? `Channel: ${histories[0].channelLogin} • ${histories.length}+ actions` : "No shared mod actions found!"}
+            </div>
+            <Separator/>
             <ul className={'flex flex-col gap-2 py-4 px-4'}>
               {histories.map((history) => (
                 <li>
