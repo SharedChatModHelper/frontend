@@ -1,7 +1,26 @@
-import {createFileRoute, redirect, useLoaderData} from '@tanstack/react-router'
-import Cookies from "js-cookie";
-import {useState} from "react";
-import {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "@/components/ui/resizable.tsx";
+import {
+  createFileRoute,
+  redirect,
+  useLoaderData,
+} from '@tanstack/react-router'
+import Cookies from 'js-cookie'
+import {useState} from 'react'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable.tsx'
+import {CLIENT_ID, TIME_AGO} from "@/lib/constants.ts";
+import {
+  cn,
+  defaultPicture,
+  localizedDuration,
+  localizedLongDay,
+  localizedShortDay,
+  localizedTime
+} from "@/lib/utils.ts";
+import {useQuery} from "@tanstack/react-query";
+import {Separator} from "@/components/ui/separator.tsx";
 
 type History = {
   userId: number
@@ -23,19 +42,39 @@ type Message = {
   timestamp: number
 }
 
+type HelixUser = {
+  id: string
+  profile_image_url: string
+  created_at: string
+}
+
+type HelixUserReturn = {
+  data: HelixUser[]
+}
+
+type UserDataIndex = {
+  [id: string]: {
+    profile_image_url: string
+    created_at: string
+  }
+}
+
 export const Route = createFileRoute('/channel/$channelId')({
   beforeLoad: () => {
-    if (!Cookies.get("twitch")) throw redirect({to: "/"});
+    if (!Cookies.get('twitch')) throw redirect({to: '/'})
   },
-  loader: async ctx => {
+  loader: async (ctx) => {
     const {channelId} = ctx.params
-    const token = Cookies.get("twitch")!;
+    const token = Cookies.get('twitch')!
 
-    const response = await fetch(`https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}`, {
-      headers: {
-        "Authorization": "Bearer " + token
-      }
-    })
+    const response = await fetch(
+      `https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}`,
+      {
+        headers: {
+          Authorization: 'Bearer ' + token,
+        },
+      },
+    )
 
     if (!response.ok) {
       throw response
@@ -44,18 +83,30 @@ export const Route = createFileRoute('/channel/$channelId')({
     return await response.json()
   },
   component: Channel,
-  pendingComponent: Pending
+  pendingComponent: Pending,
 })
 
-function Pending() {
-  return (
-    <>Hello, I'm loading</>
-  )
+function /*component*/ Pending() {
+  return <>Hello, I'm loading</>
 }
 
-function Channel() {
-  const [chatter, setChatter] = useState(null as number | null)
-  const histories: History[] = useLoaderData({from: "/channel/$channelId"})
+function picture(pictures: UserDataIndex | undefined, id: number) {
+  return pictures?.[id.toString()]?.profile_image_url ?? defaultPicture(id);
+}
+
+function /*component*/ Channel() {
+  const token = Cookies.get('twitch') //TODO: use context instead
+  const histories: History[] = useLoaderData({from: '/channel/$channelId'})
+  const [chatter, setChatter] = useState(histories[0]?.userId as number | null)
+
+  const historyMap: { [id: number]: number } = {}
+
+  const getHistory = (id: number): History => {
+    return histories[historyMap[id]]
+  }
+
+  histories.forEach((value, index) => historyMap[value.userId] = index)
+
   /*const {channelId} = Route.useParams()
 
   const token = Cookies.get("twitch")!;
@@ -78,50 +129,165 @@ function Channel() {
     }
   })*/
 
+  const {data} = useQuery({
+    queryKey: ['channels'],
+    async queryFn() {
+      const chatters = histories.map(history => history.userId).map((id) => {
+        return `id=${id}`
+      }).join("&")
+
+      const r = await fetch(`https://api.twitch.tv/helix/users?${chatters}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Client-Id": CLIENT_ID
+        }
+      });
+
+      const dataIndex: UserDataIndex = {}
+
+      const data: HelixUserReturn = await r.json()
+      data.data.forEach((value) => {
+        dataIndex[value.id] = {
+          profile_image_url: value.profile_image_url,
+          created_at: value.created_at
+        }
+      })
+
+      return dataIndex;
+    }
+  })
+
   return (
-    <div className={""}>
-      <ResizablePanelGroup direction="horizontal" className={"min-h-dvh"}>
-        <ResizablePanel>
-          <ul className={"flex flex-col gap-4"}>
-            {
-              histories.map((history, index) => (
+    <>
+      <div className={"min-h-14 bg-bg-alt font-semibold uppercase flex items-center pl-8 pr-4"}>Shared chat mod helper
+      </div>
+      <div>
+        <ResizablePanelGroup direction="horizontal" className={'min-h-[calc(100vh-3.5rem)]'}>
+          <ResizablePanel defaultSize={20} className={""}>
+            <ul className={'flex flex-col gap-2 py-4 px-4'}>
+              {histories.map((history) => (
                 <li>
-                  <button key={history.userId} onMouseDown={() => setChatter(index/*history.userId*/)}>
-                    {history.userName}
+                  <button
+                    className={cn(
+                      "p-4 w-full text-start transition-colors bg-bg-alt hover:bg-bg-hover rounded-medium flex flex-row",
+                      {"bg-bg-hover": chatter === history.userId}
+                    )}
+                    key={history.userId}
+                    onMouseDown={() => setChatter(history.userId)}
+                  >
+                    <div className={"w-8 mr-4 rounded-rounded"}>
+                      {
+                        <img className={"rounded-rounded"} src={picture(data, history.userId)}/>
+                      }
+                    </div>
+                    <div>
+                      <div className={"text-5 leading-heading font-semibold"}>
+                        {history.userName}
+                      </div>
+                      <div className={"w-full text-nowrap overflow-ellipsis overflow-hidden"}>
+                        <span className={"text-hinted-gray-9"}>{TIME_AGO.format(history.timestamp * 1000)}</span>
+                        <MessageFragment history={history}/>
+                      </div>
+                    </div>
                   </button>
                 </li>
-              ))
-            }
-          </ul>
-        </ResizablePanel>
-        <ResizableHandle/>
-        <ResizablePanel>
-          {chatter != null ? Messages(histories[chatter].messages) : <>Select a user</>}
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </div>
+              ))}
+            </ul>
+          </ResizablePanel>
+          <ResizableHandle className={"bg-bg-hover"}/>
+          <ResizablePanel className={""}>
+            {chatter != null ? (
+              <MessageWindow data={data} history={getHistory(chatter)}/>
+            ) : (
+              <>Select a user</>
+            )}
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+    </>
   )
 }
 
-function Messages(messages: Message[]) {
-  if (messages.length == 0) {
-    return (
-      <>
-        This user haven't talked recently...
-      </>
-    )
-  }
+function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | undefined, history: History }) {
+  const exists = data?.[history.userId] != undefined
 
   return (
-    <ul>
-      {
-        messages.map((message) => (
-          <li>
-            {message.text}
-          </li>
-        ))
-      }
-    </ul>
+    <>
+      <div className={"px-8 pt-4"}>
+        <div className={"flex flex-row"}>
+          <div>
+            <img className={"w-16 rounded-rounded"} src={picture(data, history.userId)}/>
+          </div>
+          <div className={"px-4"}>
+            <h5 className={"font-semibold"}>{history.userName}</h5>
+            <p className={cn(
+              {
+                "text-hinted-gray-9": exists,
+                "text-red-10": !exists,
+              }
+            )}>
+              {
+                exists ?
+                  `Account created ${localizedLongDay(data?.[history.userId]?.created_at, "en-US")}`
+                  : "Account banned or deactivated"
+              }
+            </p>
+          </div>
+        </div>
+        <div className={"text-hinted-gray-9 flex flex-row flex-nowrap pt-4 w-full"}>
+          <div className={"flex flex-col basis-full"}>
+            <p>Moderated by</p>
+            <p className={"font-semibold"}>{history.modLogin}</p>
+          </div>
+          <div className={"flex flex-col basis-full"}>
+            <p>Moderated at</p>
+            <p className={"font-semibold"}>
+              {localizedTime(history.timestamp * 1000)} • {localizedShortDay(history.timestamp * 1000)}
+            </p>
+          </div>
+
+          <div className={"flex flex-col basis-full"}>
+            <p>Duration</p>
+            <p className={"font-semibold"}>
+              {history.duration != -1 ? localizedDuration(history.duration) : "Infinite"}
+            </p>
+          </div>
+          <div className={"flex flex-col basis-full"}>
+            <p>Reason</p>
+            <p className={cn(
+              "font-semibold",
+              {
+                "text-hinted-gray-7": history.reason.length == 0
+              }
+            )}>
+              {history.reason ? history.reason : "Unspecified"}
+            </p>
+          </div>
+        </div>
+        <Separator className={"my-4"}/>
+      </div>
+    </>
+  )
+}
+
+function /*component*/ Message() {
+  return (
+    <>
+
+    </>
+  )
+}
+
+function /*component*/ MessageFragment({history}: { history: History }) {
+  if (history.messages.length == 0) return null
+
+  return (
+    <>
+      <span> • </span>
+      <span>
+        {history.messages[history.messages.length - 1].text}
+      </span>
+    </>
   )
 }
 
