@@ -23,6 +23,7 @@ import {useQuery} from "@tanstack/react-query";
 import {Separator} from "@/components/ui/separator.tsx";
 
 type History = {
+  channelLogin: string
   userId: number
   userName: string
   modId: number
@@ -219,7 +220,12 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
             <img className={"w-16 rounded-rounded"} src={picture(data, history.userId)}/>
           </div>
           <div className={"px-4"}>
-            <h5 className={"font-semibold"}>{history.userName}</h5>
+            <div className={"flex flex-row gap-2"}>
+              <h5 className={"font-semibold"}>{history.userName}</h5>
+              <a title={"Open viewer card"} href={`https://www.twitch.tv/popout/${history.channelLogin}/viewercard/${history.userName}`} target={"_blank"}>
+                <img src={"/open.png"} className={"h-8 opacity-75 hover:opacity-100"} />
+              </a>
+            </div>
             <p className={cn(
               {
                 "text-hinted-gray-9": exists,
