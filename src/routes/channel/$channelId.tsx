@@ -21,6 +21,7 @@ import {
 } from "@/lib/utils.ts";
 import {useQuery} from "@tanstack/react-query";
 import {Separator} from "@/components/ui/separator.tsx";
+import {queryClient} from "@/main.tsx";
 
 type History = {
   channelLogin: string
@@ -68,27 +69,27 @@ export const Route = createFileRoute('/channel/$channelId')({
     const {channelId} = ctx.params
     const token = Cookies.get('twitch')!
 
-    const response = await fetch(
-      `https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}`,
-      {
-        headers: {
-          Authorization: 'Bearer ' + token,
+    const response = await queryClient.fetchQuery({
+      queryKey: [`histories`, channelId],
+      queryFn: () => fetch(
+        `https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}`,
+        {
+          headers: {
+            Authorization: 'Bearer ' + token,
+          },
         },
-      },
-    )
+      ).then(value => value.json()),
 
-    if (!response.ok) {
-      throw response
-    }
+    })
 
-    return await response.json()
+    return response
   },
   component: Channel,
   pendingComponent: Pending,
 })
 
 function /*component*/ Pending() {
-  return <>Hello, I'm loading</>
+  return <>TODO: Loading page</>
 }
 
 function picture(pictures: UserDataIndex | undefined, id: number) {
@@ -100,13 +101,17 @@ function /*component*/ Channel() {
   const histories: History[] = useLoaderData({from: '/channel/$channelId'}).slice(0, 100)
   const [chatter, setChatter] = useState(histories[0]?.userId as number | null)
 
+  const userList: number[] = []
   const historyMap: { [id: number]: number } = {}
 
   const getHistory = (id: number): History => {
     return histories[historyMap[id]]
   }
 
-  histories.forEach((value, index) => historyMap[value.userId] = index)
+  histories.forEach((value, index) => {
+    historyMap[value.userId] = index
+    userList.push(value.userId)
+  })
 
   /*const {channelId} = Route.useParams()
 
@@ -130,8 +135,10 @@ function /*component*/ Channel() {
     }
   })*/
 
+
+
   const {isLoading, data} = useQuery({
-    queryKey: ['user_info'],
+    queryKey: [`user_info`, userList],
     async queryFn() {
       const chatters = histories.map(history => history.userId).map((id) => {
         return `id=${id}`
@@ -202,7 +209,7 @@ function /*component*/ Channel() {
           <ResizableHandle className={"bg-bg-hover"}/>
           <ResizablePanel className={""}>
             {chatter != null ? (
-              <MessageWindow data={data} history={getHistory(chatter)}/>
+              <MessageWindow data={data} loading={isLoading} history={getHistory(chatter)}/>
             ) : (
               <>Select a user</>
             )}
@@ -213,8 +220,17 @@ function /*component*/ Channel() {
   )
 }
 
-function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | undefined, history: History }) {
-  const exists = data?.[history.userId] != undefined
+function /*component*/ MessageWindow({data, loading, history}: { data: UserDataIndex | undefined, loading: boolean, history: History }) {
+  const exists = data?.[history.userId] != undefined || loading
+
+  let accountDetails: string;
+  if (loading) {
+    accountDetails = `Loading information`;
+  } else if (exists) {
+    accountDetails = `Account created ${localizedLongDay(data?.[history.userId]?.created_at, "en-US")}`;
+  } else {
+    accountDetails = "Account banned or deactivated";
+  }
 
   return (
     <>
@@ -236,11 +252,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
                 "text-red-10": !exists,
               }
             )}>
-              {
-                exists ?
-                  `Account created ${localizedLongDay(data?.[history.userId]?.created_at, "en-US")}`
-                  : "Account banned or deactivated"
-              }
+              {accountDetails}
             </p>
           </div>
         </div>
