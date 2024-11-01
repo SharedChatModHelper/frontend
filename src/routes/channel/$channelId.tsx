@@ -4,7 +4,7 @@ import {
   useLoaderData,
 } from '@tanstack/react-router'
 import Cookies from 'js-cookie'
-import {useState} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 import {
   ResizableHandle,
   ResizablePanel,
@@ -46,7 +46,7 @@ import {Separator} from "@/components/ui/separator.tsx";
 import {Toaster} from "@/components/ui/toaster.tsx";
 import {useToast} from "@/hooks/use-toast"
 
-type History = {
+type Moderation = {
   channelLogin: string
   userId: number
   userName: string
@@ -118,7 +118,7 @@ export const Route = createFileRoute('/channel/$channelId')({
 })
 
 function /*component*/ Pending() {
-  return <>Hello, I'm loading</>
+  return <>Hello, I'm loading</>;
 }
 
 function picture(pictures: UserDataIndex | undefined, id: number) {
@@ -126,17 +126,44 @@ function picture(pictures: UserDataIndex | undefined, id: number) {
 }
 
 function /*component*/ Channel() {
-  const token = Cookies.get('twitch') //TODO: use context instead
-  const histories: History[] = useLoaderData({from: '/channel/$channelId'}).slice(0, 100)
-  const [chatter, setChatter] = useState(histories[0]?.userId as number | null)
+  const token = Cookies.get('twitch'); //TODO: use context instead
+  const [moderations, setModerations]: [Moderation[], (value: Moderation[]) => void] = useState(useLoaderData({from: '/channel/$channelId'}).slice(0, 100));
+  const [chatter, setChatter] = useState(moderations[0]?.userId as number | null);
 
-  const historyMap: { [id: number]: number } = {}
+  const moderationMap = useMemo(() => {
+    const moderationMap: { [id: number]: number } = {};
+    moderations.forEach((value, index) => moderationMap[value.userId] = index);
+    console.log(moderationMap)
+    return moderationMap;
+  }, [moderations]);
 
-  const getHistory = (id: number): History => {
-    return histories[historyMap[id]]
+  useEffect(() => {
+    console.log(moderations)
+  }, [moderations]);
+
+  const removeModeration = useCallback((index: number) => {
+    const copy = [...moderations]
+    copy.splice(index, 1)
+
+    let newIndex = index
+    if (moderationMap[chatter!] >= copy.length) {
+      newIndex = copy.length
+    }
+
+    if (copy.length == 0) {
+      setChatter(null)
+    } else {
+      setChatter(copy[newIndex].userId);
+    }
+
+    setModerations(copy);
+
+    console.log("removed")
+  }, [moderations, moderationMap, chatter]);
+
+  const getHistory = (id: number): Moderation => {
+    return moderations[moderationMap[id]];
   }
-
-  histories.forEach((value, index) => historyMap[value.userId] = index)
 
   /*const {channelId} = Route.useParams()
 
@@ -163,7 +190,7 @@ function /*component*/ Channel() {
   const {data} = useQuery({
     queryKey: ['channels'],
     async queryFn() {
-      const chatters = histories.map(history => history.userId).map((id) => {
+      const chatters = moderations.map(history => history.userId).map((id) => {
         return `id=${id}`
       }).join("&")
 
@@ -186,7 +213,7 @@ function /*component*/ Channel() {
 
       return dataIndex;
     }
-  })
+  });
 
   return (
     <>
@@ -196,11 +223,11 @@ function /*component*/ Channel() {
         <ResizablePanelGroup direction="horizontal" className={'min-h-[calc(100vh-3.5rem)]'}>
           <ResizablePanel defaultSize={20} className={""}>
             <div className={"min-h-14 flex items-center pl-8 pr-4"}>
-              {histories[0] ? `Channel: ${histories[0].channelLogin} • ${histories.length}+ actions` : "No shared mod actions found!"}
+              {moderations[0] ? `Channel: ${moderations[0].channelLogin} • ${moderations.length}+ actions` : "No shared mod actions found!"}
             </div>
             <Separator/>
             <ul className={'flex flex-col gap-2 py-4 px-4'}>
-              {histories.map((history) => (
+              {moderations.map((history) => (
                 <li>
                   <button
                     className={cn(
@@ -221,7 +248,7 @@ function /*component*/ Channel() {
                       </div>
                       <div className={"w-full text-nowrap overflow-ellipsis overflow-hidden"}>
                         <span className={"text-hinted-gray-9"}>{TIME_AGO.format(history.timestamp * 1000)}</span>
-                        <MessageFragment history={history}/>
+                        <MessageFragment moderation={history}/>
                       </div>
                     </div>
                   </button>
@@ -232,27 +259,27 @@ function /*component*/ Channel() {
           <ResizableHandle className={"bg-bg-hover"}/>
           <ResizablePanel className={""}>
             {chatter != null ? (
-              <MessageWindow data={data} history={getHistory(chatter)}/>
+              <MessageWindow data={data} deleteFn={() => removeModeration(moderationMap[chatter])} moderation={getHistory(chatter)}/>
             ) : (
-              <>Select a user</>
+              <>TODO: No moderations action</>
             )}
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
       <Toaster />
     </>
-  )
+  );
 }
 
-function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | undefined, history: History }) {
-  const exists = data?.[history.userId] != undefined
-  const { toast } = useToast()
-  const { channelId } = Route.useParams()
-  const token = Cookies.get('twitch')
-  const selfId = Cookies.get('self')
+function /*component*/ MessageWindow({data, moderation, deleteFn}: { data: UserDataIndex | undefined, moderation: Moderation, deleteFn: () => void }) {
+  const exists = data?.[moderation.userId] != undefined;
+  const { toast } = useToast();
+  const { channelId } = Route.useParams();
+  const token = Cookies.get('twitch');
+  const selfId = Cookies.get('self');
 
   const dismiss = useMutation({
-    mutationFn: (dismissData) => {
+    mutationFn: (dismissData: { userId: number }) => {
       return fetch(`https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}&user=${dismissData.userId}`, {
         method: "DELETE",
         headers: {
@@ -260,7 +287,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
         }
       })
     }
-  })
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const ban = useMutation({
@@ -275,7 +302,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
         body: JSON.stringify({ data: banData }),
       }).then(resp => resp.json())
     }
-  })
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const poll = useMutation({
@@ -300,19 +327,19 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
         })
       }).then(resp => resp.json())
     }
-  })
+  });
 
   return (
     <>
       <div className={"px-8 pt-4 h-full flex flex-col"}>
         <div className={"flex flex-row"}>
           <div>
-            <img className={"w-16 rounded-rounded"} src={picture(data, history.userId)}/>
+            <img className={"w-16 rounded-rounded"} src={picture(data, moderation.userId)}/>
           </div>
           <div className={"px-4"}>
             <div className={"flex flex-row gap-2"}>
-              <h5 className={"font-semibold"}>{history.userName}</h5>
-              <a title={"Open viewer card"} href={`https://www.twitch.tv/popout/${history.channelLogin}/viewercard/${history.userName}`} target={"_blank"}>
+              <h5 className={"font-semibold"}>{moderation.userName}</h5>
+              <a title={"Open viewer card"} href={`https://www.twitch.tv/popout/${moderation.channelLogin}/viewercard/${moderation.userName}`} target={"_blank"}>
                 <img src={"/open.png"} className={"h-8 opacity-75 hover:opacity-100"} />
               </a>
             </div>
@@ -324,7 +351,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
             )}>
               {
                 exists ?
-                  `Account created ${localizedLongDay(data?.[history.userId]?.created_at, "en-US")}`
+                  `Account created ${localizedLongDay(data?.[moderation.userId]?.created_at, "en-US")}`
                   : "Account banned or deactivated"
               }
             </p>
@@ -333,23 +360,23 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
         <div className={"text-hinted-gray-9 flex flex-row flex-nowrap pt-4 w-full"}>
           <div className={"flex flex-col basis-full"}>
             <p>Source Channel</p>
-            <p className={"font-semibold"}>{history.sourceLogin}</p>
+            <p className={"font-semibold"}>{moderation.sourceLogin}</p>
           </div>
           <div className={"flex flex-col basis-full"}>
             <p>Moderated by</p>
-            <p className={"font-semibold"}>{history.modLogin}</p>
+            <p className={"font-semibold"}>{moderation.modLogin}</p>
           </div>
           <div className={"flex flex-col basis-full"}>
             <p>Moderated at</p>
             <p className={"font-semibold"}>
-              {localizedTime(history.timestamp * 1000)} • {localizedShortDay(history.timestamp * 1000)}
+              {localizedTime(moderation.timestamp * 1000)} • {localizedShortDay(moderation.timestamp * 1000)}
             </p>
           </div>
 
           <div className={"flex flex-col basis-full"}>
             <p>Duration</p>
             <p className={"font-semibold"}>
-              {history.duration != -1 ? localizedDuration(history.duration) : "Infinite"}
+              {moderation.duration != -1 ? localizedDuration(moderation.duration) : "Infinite"}
             </p>
           </div>
           <div className={"flex flex-col basis-full"}>
@@ -357,10 +384,10 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
             <p className={cn(
               "font-semibold",
               {
-                "text-hinted-gray-7": history.reason.length == 0
+                "text-hinted-gray-7": moderation.reason.length == 0
               }
             )}>
-              {history.reason ? history.reason : "Unspecified"}
+              {moderation.reason ? moderation.reason : "Unspecified"}
             </p>
           </div>
         </div>
@@ -386,18 +413,18 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={async () => {
                   try {
-                    const resp = await dismiss.mutateAsync({ userId: history.userId })
+                    const resp = await dismiss.mutateAsync({ userId: moderation.userId })
                     if (resp.ok) {
                       toast({
-                        description: `Dismissed logs of ${history.userName}`
-                      })
-                      // TODO: remove user from UI
+                        description: `Dismissed logs of ${moderation.userName}`
+                      });
+                      deleteFn();
                     } else {
                       const body = await resp.json()
                       toast({
                         variant: "destructive",
                         title: "Uh oh! Something went wrong.",
-                        description: `Failed to dismiss logs for ${history.userName} due to ${body.error}`
+                        description: `Failed to dismiss logs for ${moderation.userName} due to ${body.error}`
                       })
                     }
                   } catch (e) {
@@ -405,7 +432,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
                     toast({
                       variant: "destructive",
                       title: "Uh oh! Something went wrong.",
-                      description: `Failed to dismiss logs for ${history.userName}; try again later`
+                      description: `Failed to dismiss logs for ${moderation.userName}; try again later`
                     })
                   } finally {
                     dismiss.reset()
@@ -512,7 +539,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
         </div>
       </div>
     </>
-  )
+  );
 }
 
 function /*component*/ Message() {
@@ -520,76 +547,18 @@ function /*component*/ Message() {
     <>
 
     </>
-  )
+  );
 }
 
-function /*component*/ MessageFragment({history}: { history: History }) {
-  if (history.messages.length == 0) return null
+function /*component*/ MessageFragment({moderation}: { moderation: Moderation }) {
+  if (moderation.messages.length == 0) return null
 
   return (
     <>
       <span> • </span>
       <span>
-        {history.messages[history.messages.length - 1].text}
+        {moderation.messages[moderation.messages.length - 1].text}
       </span>
     </>
-  )
+  );
 }
-
-// The output of a query, this is here just for reference,
-// ============= Please remove on production =============
-/*const vals = [{
-  "userId": 53888434,
-  "userName": "ogprodigy",
-  "modId": 1171922673,
-  "modLogin": "t4jtesting",
-  "sourceId": 1171922673,
-  "sourceLogin": "t4jtesting",
-  "duration": 59,
-  "reason": "smh my head",
-  "timestamp": 1730105809,
-  "messages": [{
-    "text": "joy to",
-    "sourceId": 1171922673,
-    "sourceLogin": "t4jtesting",
-    "timestamp": 1730105773
-  }, {"text": "the world", "sourceId": "", "sourceLogin": "", "timestamp": 1730105776}, {
-    "text": "that",
-    "sourceId": 1171922673,
-    "sourceLogin": "t4jtesting",
-    "timestamp": 1730105783
-  }]
-}, {
-  "userId": 35958947,
-  "userName": null,
-  "modId": 1171922673,
-  "modLogin": "t4jtesting",
-  "sourceId": 1171922673,
-  "sourceLogin": "t4jtesting",
-  "duration": 1,
-  "reason": "attended jan 6",
-  "timestamp": 1730105657,
-  "messages": []
-}, {
-  "userId": 17337557,
-  "userName": null,
-  "modId": 1171922673,
-  "modLogin": "t4jtesting",
-  "sourceId": 1171922673,
-  "sourceLogin": "t4jtesting",
-  "duration": -1,
-  "reason": "weirdo",
-  "timestamp": 1730105629,
-  "messages": []
-}, {
-  "userId": 268669435,
-  "userName": null,
-  "modId": 1171922673,
-  "modLogin": "t4jtesting",
-  "sourceId": 1171922673,
-  "sourceLogin": "t4jtesting",
-  "duration": 599,
-  "reason": "",
-  "timestamp": 1730105566,
-  "messages": []
-}]*/
