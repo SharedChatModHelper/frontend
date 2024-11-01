@@ -246,7 +246,6 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
   const token = Cookies.get('twitch')
   const selfId = Cookies.get('self')
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const dismiss = useMutation({
     mutationFn: (dismissData) => {
       return fetch(`https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}&user=${dismissData.userId}`, {
@@ -392,7 +391,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
                       })
                     }
                   } catch (e) {
-                    console.log(e)
+                    console.error(e)
                     toast({
                       variant: "destructive",
                       title: "Uh oh! Something went wrong.",
