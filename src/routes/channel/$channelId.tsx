@@ -361,7 +361,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
         <div className={"min-h-20 bg-bg-alt p-8 rounded-t-3xl flex flex-row gap-20 justify-center"}>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost">Dismiss</Button>
+              <Button variant="default">Dismiss</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -379,7 +379,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost">Ban</Button>
+              <Button variant="default">Ban</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
@@ -397,14 +397,14 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" variant="secondary">Execute</Button>
+                <Button type="submit">Execute</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost">Timeout</Button>
+              <Button variant="default">Timeout</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
@@ -428,14 +428,14 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" variant="secondary">Execute</Button>
+                <Button type="submit">Execute</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost">Start Chat Poll</Button>
+              <Button variant="default">Start Chat Poll</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
@@ -465,7 +465,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" variant="secondary">Execute</Button>
+                <Button type="submit">Execute</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
