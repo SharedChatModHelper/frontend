@@ -138,7 +138,7 @@ function /*component*/ Channel() {
 
 
   const {isLoading, data} = useQuery({
-    queryKey: [`user_info`, userList],
+    queryKey: [`user_info`, userList.reduce((acc, curr) => (acc * 31 + curr) | 0, 17)],
     async queryFn() {
       const chatters = histories.map(history => history.userId).map((id) => {
         return `id=${id}`
