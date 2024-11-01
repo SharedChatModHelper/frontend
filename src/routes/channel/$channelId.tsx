@@ -43,6 +43,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {Separator} from "@/components/ui/separator.tsx";
+import {Toaster} from "@/components/ui/toaster.tsx";
+import {useToast} from "@/hooks/use-toast"
 
 type History = {
   userId: number
@@ -232,21 +234,22 @@ function /*component*/ Channel() {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+      <Toaster />
     </>
   )
 }
 
 function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | undefined, history: History }) {
   const exists = data?.[history.userId] != undefined
-
+  const { toast } = useToast()
   const { channelId } = Route.useParams()
   const token = Cookies.get('twitch')
   const selfId = Cookies.get('self')
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const dismiss = useMutation({
-    mutationFn: (userId) => {
-      return fetch(`https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}&user=${userId}`, {
+    mutationFn: (dismissData) => {
+      return fetch(`https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}&user=${dismissData.userId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -372,7 +375,35 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction>Continue</AlertDialogAction>
+                <AlertDialogAction onClick={async () => {
+                  try {
+                    const resp = await dismiss.mutateAsync({ userId: history.userId })
+                    if (resp.ok) {
+                      toast({
+                        description: `Dismissed logs of ${history.userName}`
+                      })
+                      // TODO: remove user from UI
+                    } else {
+                      const body = await resp.json()
+                      toast({
+                        variant: "destructive",
+                        title: "Uh oh! Something went wrong.",
+                        description: `Failed to dismiss logs for ${history.userName} due to ${body.error}`
+                      })
+                    }
+                  } catch (e) {
+                    console.log(e)
+                    toast({
+                      variant: "destructive",
+                      title: "Uh oh! Something went wrong.",
+                      description: `Failed to dismiss logs for ${history.userName}; try again later`
+                    })
+                  } finally {
+                    dismiss.reset()
+                  }
+                }}>
+                  Continue
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
