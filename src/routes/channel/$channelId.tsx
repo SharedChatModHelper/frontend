@@ -147,7 +147,7 @@ function /*component*/ Channel() {
 
     let newIndex = index
     if (moderationMap[chatter!] >= copy.length) {
-      newIndex = copy.length
+      newIndex = copy.length - 1;
     }
 
     if (copy.length == 0) {
