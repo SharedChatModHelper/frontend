@@ -418,7 +418,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
                   <Label htmlFor="duration" className="text-right">
                     Seconds
                   </Label>
-                  <Input id="duration" type="number" defaultValue="60" className="col-span-3"/>
+                  <Input id="duration" type="number" defaultValue="600" className="col-span-3"/>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="reason" className="text-right">
