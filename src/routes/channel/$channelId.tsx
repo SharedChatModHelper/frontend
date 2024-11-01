@@ -299,6 +299,10 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
         </div>
         <div className={"text-hinted-gray-9 flex flex-row flex-nowrap pt-4 w-full"}>
           <div className={"flex flex-col basis-full"}>
+            <p>Source Channel</p>
+            <p className={"font-semibold"}>{history.sourceLogin}</p>
+          </div>
+          <div className={"flex flex-col basis-full"}>
             <p>Moderated by</p>
             <p className={"font-semibold"}>{history.modLogin}</p>
           </div>
