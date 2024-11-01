@@ -20,6 +20,28 @@ import {
   localizedTime
 } from "@/lib/utils.ts";
 import {useMutation, useQuery} from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {Button} from "@/components/ui/button.tsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription, DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {Separator} from "@/components/ui/separator.tsx";
 
 type History = {
@@ -62,7 +84,6 @@ type UserDataIndex = {
 type PollInput = {
   title?: string
   duration?: number
-  pointsEnabled?: boolean
   channelPoints?: number
 }
 
@@ -267,7 +288,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
             {"title": "No"}
           ],
           "duration": pollData?.duration ?? 60,
-          "channel_points_voting_enabled": pollData?.pointsEnabled ?? false,
+          "channel_points_voting_enabled": !!pollData?.channelPoints,
           "channel_points_per_vote": pollData?.channelPoints
         })
       }).then(resp => resp.json())
@@ -276,7 +297,7 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
 
   return (
     <>
-      <div className={"px-8 pt-4"}>
+      <div className={"px-8 pt-4 h-full flex flex-col"}>
         <div className={"flex flex-row"}>
           <div>
             <img className={"w-16 rounded-rounded"} src={picture(data, history.userId)}/>
@@ -332,6 +353,123 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
           </div>
         </div>
         <Separator className={"my-4"}/>
+
+        <div className={"mb-auto"}>
+          Messages will go here
+        </div>
+
+        <div className={"min-h-20 bg-bg-alt p-8 rounded-t-3xl flex flex-row gap-20 justify-center"}>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost">Dismiss</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently remove the user's chat logs from our server.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction>Continue</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost">Ban</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Ban Details</DialogTitle>
+                <DialogDescription>
+                  Customize the ban reason here. Click execute once done.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="reason" className="text-right">
+                    Reason
+                  </Label>
+                  <Input id="reason" defaultValue="Reinstated shared chat ban" className="col-span-3" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" variant="secondary">Execute</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost">Timeout</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Timeout Details</DialogTitle>
+                <DialogDescription>
+                  Customize the timeout here. Click execute once done.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="duration" className="text-right">
+                    Seconds
+                  </Label>
+                  <Input id="duration" type="number" defaultValue="60" className="col-span-3"/>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="reason" className="text-right">
+                    Reason
+                  </Label>
+                  <Input id="reason" defaultValue="Reinstated shared chat timeout" className="col-span-3"/>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" variant="secondary">Execute</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost">Start Chat Poll</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Poll Details</DialogTitle>
+                <DialogDescription>
+                  Customize the poll here. Click execute once done.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="title" className="text-right">
+                    Title
+                  </Label>
+                  <Input id="title" defaultValue="Should we punish this chatter?" className="col-span-3"/>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="duration" className="text-right">
+                    Seconds
+                  </Label>
+                  <Input id="duration" type="number" defaultValue="60" className="col-span-3"/>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="points" className="text-right">
+                    Channel Points
+                  </Label>
+                  <Input id="points" type="number" defaultValue="0" className="col-span-3"/>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" variant="secondary">Execute</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </>
   )
