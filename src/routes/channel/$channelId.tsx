@@ -19,7 +19,7 @@ import {
   localizedShortDay,
   localizedTime
 } from "@/lib/utils.ts";
-import {useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {Separator} from "@/components/ui/separator.tsx";
 
 type History = {
@@ -57,6 +57,13 @@ type UserDataIndex = {
     profile_image_url: string
     created_at: string
   }
+}
+
+type PollInput = {
+  title?: string
+  duration?: number
+  pointsEnabled?: boolean
+  channelPoints?: number
 }
 
 export const Route = createFileRoute('/channel/$channelId')({
@@ -211,11 +218,23 @@ function /*component*/ Channel() {
 function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | undefined, history: History }) {
   const exists = data?.[history.userId] != undefined
 
-  /*
   const { channelId } = Route.useParams()
   const token = Cookies.get('twitch')
   const selfId = Cookies.get('self')
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const dismiss = useMutation({
+    mutationFn: (userId) => {
+      return fetch(`https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}&user=${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+    }
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const ban = useMutation({
     mutationFn: (banData) => {
       return fetch(`https://api.twitch.tv/helix/moderation/bans?broadcaster_id=${channelId}&moderator_id=${selfId}`, {
@@ -226,12 +245,13 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ data: banData }),
-      })
+      }).then(resp => resp.json())
     }
   })
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const poll = useMutation({
-    mutationFun: (pollData) => {
+    mutationFn: (pollData: PollInput) => {
       return fetch("https://api.twitch.tv/helix/polls", {
         method: "POST",
         headers: {
@@ -250,10 +270,9 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
           "channel_points_voting_enabled": pollData?.pointsEnabled ?? false,
           "channel_points_per_vote": pollData?.channelPoints
         })
-      })
+      }).then(resp => resp.json())
     }
   })
-  */
 
   return (
     <>
