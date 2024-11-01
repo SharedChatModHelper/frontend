@@ -47,6 +47,7 @@ import {Toaster} from "@/components/ui/toaster.tsx";
 import {useToast} from "@/hooks/use-toast"
 
 type History = {
+  channelLogin: string
   userId: number
   userName: string
   modId: number
@@ -126,7 +127,7 @@ function picture(pictures: UserDataIndex | undefined, id: number) {
 
 function /*component*/ Channel() {
   const token = Cookies.get('twitch') //TODO: use context instead
-  const histories: History[] = useLoaderData({from: '/channel/$channelId'})
+  const histories: History[] = useLoaderData({from: '/channel/$channelId'}).slice(0, 100)
   const [chatter, setChatter] = useState(histories[0]?.userId as number | null)
 
   const historyMap: { [id: number]: number } = {}
@@ -194,6 +195,10 @@ function /*component*/ Channel() {
       <div>
         <ResizablePanelGroup direction="horizontal" className={'min-h-[calc(100vh-3.5rem)]'}>
           <ResizablePanel defaultSize={20} className={""}>
+            <div className={"min-h-14 flex items-center pl-8 pr-4"}>
+              {histories[0] ? `Channel: ${histories[0].channelLogin} • ${histories.length}+ actions` : "No shared mod actions found!"}
+            </div>
+            <Separator/>
             <ul className={'flex flex-col gap-2 py-4 px-4'}>
               {histories.map((history) => (
                 <li>
@@ -305,7 +310,12 @@ function /*component*/ MessageWindow({data, history}: { data: UserDataIndex | un
             <img className={"w-16 rounded-rounded"} src={picture(data, history.userId)}/>
           </div>
           <div className={"px-4"}>
-            <h5 className={"font-semibold"}>{history.userName}</h5>
+            <div className={"flex flex-row gap-2"}>
+              <h5 className={"font-semibold"}>{history.userName}</h5>
+              <a title={"Open viewer card"} href={`https://www.twitch.tv/popout/${history.channelLogin}/viewercard/${history.userName}`} target={"_blank"}>
+                <img src={"/open.png"} className={"h-8 opacity-75 hover:opacity-100"} />
+              </a>
+            </div>
             <p className={cn(
               {
                 "text-hinted-gray-9": exists,
