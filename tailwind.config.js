@@ -6,6 +6,11 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    fontFamily: {
+      "base": ["Inter", "Roobert", "Helvetica\\ Neue", "Helvetica", "Arial", "sans-serif"],
+      "display": ["Roobert", "Inter", "Helvetica\\ Neue", "Helvetica", "Arial", "sans-serif"],
+      "mono": "monospace",
+    },
     fontSize: {
       base: "1.3rem",
       1: "5.4rem",
