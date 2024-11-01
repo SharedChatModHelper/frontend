@@ -129,8 +129,8 @@ function /*component*/ Channel() {
     }
   })*/
 
-  const {data} = useQuery({
-    queryKey: ['channels'],
+  const {isLoading, data} = useQuery({
+    queryKey: ['user_info'],
     async queryFn() {
       const chatters = histories.map(history => history.userId).map((id) => {
         return `id=${id}`
