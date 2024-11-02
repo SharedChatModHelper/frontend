@@ -4,7 +4,7 @@ import {
   useLoaderData,
 } from '@tanstack/react-router'
 import Cookies from 'js-cookie'
-import {useState} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 import {
   ResizableHandle,
   ResizablePanel,
@@ -19,11 +19,37 @@ import {
   localizedShortDay,
   localizedTime
 } from "@/lib/utils.ts";
-import {useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {Button} from "@/components/ui/button.tsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription, DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {Separator} from "@/components/ui/separator.tsx";
+import {Toaster} from "@/components/ui/toaster.tsx";
+import {useToast} from "@/hooks/use-toast"
+import {Clock12Regular, Comment12Regular, Dismiss12Regular, Prohibited12Regular} from "@fluentui/react-icons";
 import {queryClient} from "@/main.tsx";
 
-type History = {
+//region Types
+type Moderation = {
   channelLogin: string
   userId: number
   userName: string
@@ -61,6 +87,13 @@ type UserDataIndex = {
   }
 }
 
+type PollInput = {
+  title?: string
+  duration?: number
+  channelPoints?: number
+}
+//endregion
+
 export const Route = createFileRoute('/channel/$channelId')({
   beforeLoad: () => {
     if (!Cookies.get('twitch')) throw redirect({to: '/'})
@@ -97,50 +130,45 @@ function picture(pictures: UserDataIndex | undefined, id: number) {
 }
 
 function /*component*/ Channel() {
-  const token = Cookies.get('twitch') //TODO: use context instead
-  const histories: History[] = useLoaderData({from: '/channel/$channelId'}).slice(0, 100)
-  const [chatter, setChatter] = useState(histories[0]?.userId as number | null)
+  const token = Cookies.get('twitch'); //TODO: use context instead
+  const [moderations, setModerations]: [Moderation[], (value: Moderation[]) => void] = useState(useLoaderData({from: '/channel/$channelId'}).slice(0, 100));
+  const [chatter, setChatter] = useState(moderations[0]?.userId as number | null);
 
-  const userList: number[] = []
-  const historyMap: { [id: number]: number } = {}
+  const moderationMap = useMemo(() => {
+    const moderationMap: { [id: number]: number } = {};
+    moderations.forEach((value, index) => moderationMap[value.userId] = index);
+    return moderationMap;
+  }, [moderations]);
 
-  const getHistory = (id: number): History => {
-    return histories[historyMap[id]]
+  useEffect(() => {
+  }, [moderations]);
+
+  const removeModeration = useCallback((index: number) => {
+    const copy = [...moderations]
+    copy.splice(index, 1)
+
+    let newIndex = index
+    if (moderationMap[chatter!] >= copy.length) {
+      newIndex = copy.length - 1;
+    }
+
+    if (copy.length == 0) {
+      setChatter(null)
+    } else {
+      setChatter(copy[newIndex].userId);
+    }
+
+    setModerations(copy);
+  }, [moderations, moderationMap, chatter]);
+
+  const getModeration = (id: number): Moderation => {
+    return moderations[moderationMap[id]];
   }
 
-  histories.forEach((value, index) => {
-    historyMap[value.userId] = index
-    userList.push(value.userId)
-  })
-
-  /*const {channelId} = Route.useParams()
-
-  const token = Cookies.get("twitch")!;
-
-  const {isLoading, error, data} = useQuery({
-    queryKey: ['user'],
-    queryFn: () => {
-      if (chatter == null) return null;
-      return fetch(`https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}&user=${chatter}`, {
-        headers: {
-          "Authorization": "Bearer " + token
-        }
-      }).then(async r => {
-        return {
-          status: r.status,
-          ok: r.ok,
-          data: await (r.ok ? r.json() : r.text())
-        }
-      });
-    }
-  })*/
-
-
-
   const {isLoading, data} = useQuery({
-    queryKey: [`user_info`, userList.reduce((acc, curr) => (acc * 31 + curr) | 0, 17)],
+    queryKey: [`user_info`, moderations.reduce((acc, curr) => (acc * 31 + curr.userId) | 0, 17)],
     async queryFn() {
-      const chatters = histories.map(history => history.userId).map((id) => {
+      const chatters = moderations.map(moderation => moderation.userId).map((id) => {
         return `id=${id}`
       }).join("&")
 
@@ -163,7 +191,7 @@ function /*component*/ Channel() {
 
       return dataIndex;
     }
-  })
+  });
 
   return (
     <>
@@ -173,32 +201,32 @@ function /*component*/ Channel() {
         <ResizablePanelGroup direction="horizontal" className={'min-h-[calc(100vh-3.5rem)]'}>
           <ResizablePanel defaultSize={20} className={""}>
             <div className={"min-h-14 flex items-center pl-8 pr-4"}>
-              {histories[0] ? `Channel: ${histories[0].channelLogin} • ${histories.length}+ actions` : "No shared mod actions found!"}
+              {moderations[0] ? `Channel: ${moderations[0].channelLogin} • ${moderations.length}+ actions` : "No shared mod actions found!"}
             </div>
             <Separator/>
             <ul className={'flex flex-col gap-2 py-4 px-4'}>
-              {histories.map((history) => (
+              {moderations.map((moderation) => (
                 <li>
                   <button
                     className={cn(
                       "p-4 w-full text-start transition-colors bg-bg-alt hover:bg-bg-hover rounded-medium flex flex-row",
-                      {"bg-bg-hover": chatter === history.userId}
+                      {"bg-bg-hover": chatter === moderation.userId}
                     )}
-                    key={history.userId}
-                    onMouseDown={() => setChatter(history.userId)}
+                    key={moderation.userId}
+                    onMouseDown={() => setChatter(moderation.userId)}
                   >
                     <div className={"w-8 mr-4 rounded-rounded"}>
                       {
-                        <img className={"rounded-rounded"} src={picture(data, history.userId)}/>
+                        <img alt={`${moderation.userName}'s profile image`} className={"rounded-rounded"} src={picture(data, moderation.userId)}/>
                       }
                     </div>
                     <div>
                       <div className={"text-5 leading-heading font-semibold"}>
-                        {history.userName}
+                        {moderation.userName}
                       </div>
                       <div className={"w-full text-nowrap overflow-ellipsis overflow-hidden"}>
-                        <span className={"text-hinted-gray-9"}>{TIME_AGO.format(history.timestamp * 1000)}</span>
-                        <MessageFragment history={history}/>
+                        <span className={"text-hinted-gray-9"}>{TIME_AGO.format(moderation.timestamp * 1000)}</span>
+                        <MessageFragment moderation={moderation}/>
                       </div>
                     </div>
                   </button>
@@ -209,40 +237,96 @@ function /*component*/ Channel() {
           <ResizableHandle className={"bg-bg-hover"}/>
           <ResizablePanel className={""}>
             {chatter != null ? (
-              <MessageWindow data={data} loading={isLoading} history={getHistory(chatter)}/>
+              <MessageWindow data={data} loading={isLoading} deleteFn={() => removeModeration(moderationMap[chatter])} moderation={getModeration(chatter)}/>
             ) : (
-              <>Select a user</>
+              <>TODO: No moderations action</>
             )}
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+      <Toaster />
     </>
-  )
+  );
 }
 
-function /*component*/ MessageWindow({data, loading, history}: { data: UserDataIndex | undefined, loading: boolean, history: History }) {
-  const exists = data?.[history.userId] != undefined || loading
+function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { data: UserDataIndex | undefined, loading: boolean, moderation: Moderation, deleteFn: () => void }) {
+  const exists = data?.[moderation.userId] != undefined;
+  const { toast } = useToast();
+  const { channelId } = Route.useParams();
+  const token = Cookies.get('twitch');
+  const selfId = Cookies.get('self');
+
+  const dismiss = useMutation({
+    mutationFn: (dismissData: { userId: number }) => {
+      return fetch(`https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}&user=${dismissData.userId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+    }
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const ban = useMutation({
+    mutationFn: (banData) => {
+      return fetch(`https://api.twitch.tv/helix/moderation/bans?broadcaster_id=${channelId}&moderator_id=${selfId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Client-Id": CLIENT_ID,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data: banData }),
+      }).then(resp => resp.json())
+    }
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const poll = useMutation({
+    mutationFn: (pollData: PollInput) => {
+      return fetch("https://api.twitch.tv/helix/polls", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Client-Id": CLIENT_ID,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          "broadcaster_id": channelId,
+          "title": pollData?.title ?? "Should we punish this chatter?",
+          "choices": [
+            {"title": "Yes"},
+            {"title": "No"}
+          ],
+          "duration": pollData?.duration ?? 60,
+          "channel_points_voting_enabled": !!pollData?.channelPoints,
+          "channel_points_per_vote": pollData?.channelPoints
+        })
+      }).then(resp => resp.json())
+    }
+  });
 
   let accountDetails: string;
   if (loading) {
     accountDetails = `Loading information`;
   } else if (exists) {
-    accountDetails = `Account created ${localizedLongDay(data?.[history.userId]?.created_at, "en-US")}`;
+    accountDetails = `Account created ${localizedLongDay(data?.[moderation.userId]?.created_at, "en-US")}`;
   } else {
     accountDetails = "Account banned or deactivated";
   }
 
   return (
     <>
-      <div className={"px-8 pt-4"}>
+      <div className={"px-8 pt-4 h-full flex flex-col"}>
         <div className={"flex flex-row"}>
           <div>
-            <img className={"w-16 rounded-rounded"} src={picture(data, history.userId)}/>
+            <img alt={`${moderation.userName}'s profile image`} className={"w-16 rounded-rounded"} src={picture(data, moderation.userId)}/>
           </div>
           <div className={"px-4"}>
             <div className={"flex flex-row gap-2"}>
-              <h5 className={"font-semibold"}>{history.userName}</h5>
-              <a title={"Open viewer card"} href={`https://www.twitch.tv/popout/${history.channelLogin}/viewercard/${history.userName}`} target={"_blank"}>
+              <h5 className={"font-semibold"}>{moderation.userName}</h5>
+              <a title={"Open viewer card"} href={`https://www.twitch.tv/popout/${moderation.channelLogin}/viewercard/${moderation.userName}`} target={"_blank"}>
                 <img src={"/open.png"} className={"h-8 opacity-75 hover:opacity-100"} />
               </a>
             </div>
@@ -258,20 +342,24 @@ function /*component*/ MessageWindow({data, loading, history}: { data: UserDataI
         </div>
         <div className={"text-hinted-gray-9 flex flex-row flex-nowrap pt-4 w-full"}>
           <div className={"flex flex-col basis-full"}>
+            <p>Source Channel</p>
+            <p className={"font-semibold"}>{moderation.sourceLogin}</p>
+          </div>
+          <div className={"flex flex-col basis-full"}>
             <p>Moderated by</p>
-            <p className={"font-semibold"}>{history.modLogin}</p>
+            <p className={"font-semibold"}>{moderation.modLogin}</p>
           </div>
           <div className={"flex flex-col basis-full"}>
             <p>Moderated at</p>
             <p className={"font-semibold"}>
-              {localizedTime(history.timestamp * 1000)} • {localizedShortDay(history.timestamp * 1000)}
+              {localizedTime(moderation.timestamp * 1000)} • {localizedShortDay(moderation.timestamp * 1000)}
             </p>
           </div>
 
           <div className={"flex flex-col basis-full"}>
             <p>Duration</p>
             <p className={"font-semibold"}>
-              {history.duration != -1 ? localizedDuration(history.duration) : "Infinite"}
+              {moderation.duration != -1 ? localizedDuration(moderation.duration) : "Infinite"}
             </p>
           </div>
           <div className={"flex flex-col basis-full"}>
@@ -279,17 +367,162 @@ function /*component*/ MessageWindow({data, loading, history}: { data: UserDataI
             <p className={cn(
               "font-semibold",
               {
-                "text-hinted-gray-7": history.reason.length == 0
+                "text-hinted-gray-7": moderation.reason.length == 0
               }
             )}>
-              {history.reason ? history.reason : "Unspecified"}
+              {moderation.reason ? moderation.reason : "Unspecified"}
             </p>
           </div>
         </div>
         <Separator className={"my-4"}/>
+
+        <div className={"mb-auto"}>
+          Messages will go here
+        </div>
+
+        <div className={"min-h-20 bg-bg-alt p-8 rounded-t-3xl flex flex-row gap-20 justify-center"}>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button h6sb icon={<Dismiss12Regular/>}>Dismiss</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently remove the user's chat logs from our server.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={async () => {
+                  try {
+                    const resp = await dismiss.mutateAsync({ userId: moderation.userId })
+                    if (resp.ok) {
+                      toast({
+                        description: `Dismissed logs of ${moderation.userName}`
+                      });
+                      deleteFn();
+                    } else {
+                      const body = await resp.json()
+                      toast({
+                        variant: "destructive",
+                        title: "Uh oh! Something went wrong.",
+                        description: `Failed to dismiss logs for ${moderation.userName} due to ${body.error}`
+                      })
+                    }
+                  } catch (e) {
+                    console.error(e)
+                    toast({
+                      variant: "destructive",
+                      title: "Uh oh! Something went wrong.",
+                      description: `Failed to dismiss logs for ${moderation.userName}; try again later`
+                    })
+                  } finally {
+                    dismiss.reset()
+                  }
+                }}>
+                  Continue
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button h6sb icon={<Prohibited12Regular/>}>Ban</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Ban Details</DialogTitle>
+                <DialogDescription>
+                  Customize the ban reason here. Click execute once done.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="reason" className="text-right">
+                    Reason
+                  </Label>
+                  <Input id="reason" defaultValue="Reinstated shared chat ban" className="col-span-3" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">Execute</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button h6sb icon={<Clock12Regular/>}>Timeout</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Timeout Details</DialogTitle>
+                <DialogDescription>
+                  Customize the timeout here. Click execute once done.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="duration" className="text-right">
+                    Seconds
+                  </Label>
+                  <Input id="duration" type="number" defaultValue="600" className="col-span-3"/>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="reason" className="text-right">
+                    Reason
+                  </Label>
+                  <Input id="reason" defaultValue="Reinstated shared chat timeout" className="col-span-3"/>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">Execute</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button h6sb icon={<Comment12Regular/>}>Start Chat Poll</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Poll Details</DialogTitle>
+                <DialogDescription>
+                  Customize the poll here. Click execute once done.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="title" className="text-right">
+                    Title
+                  </Label>
+                  <Input id="title" defaultValue="Should we punish this chatter?" className="col-span-3"/>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="duration" className="text-right">
+                    Seconds
+                  </Label>
+                  <Input id="duration" type="number" defaultValue="60" className="col-span-3"/>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="points" className="text-right">
+                    Channel Points
+                  </Label>
+                  <Input id="points" type="number" defaultValue="0" className="col-span-3"/>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">Execute</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </>
-  )
+  );
 }
 
 function /*component*/ Message() {
@@ -297,76 +530,18 @@ function /*component*/ Message() {
     <>
 
     </>
-  )
+  );
 }
 
-function /*component*/ MessageFragment({history}: { history: History }) {
-  if (history.messages.length == 0) return null
+function /*component*/ MessageFragment({moderation}: { moderation: Moderation }) {
+  if (moderation.messages.length == 0) return null
 
   return (
     <>
       <span> • </span>
       <span>
-        {history.messages[history.messages.length - 1].text}
+        {moderation.messages[moderation.messages.length - 1].text}
       </span>
     </>
-  )
+  );
 }
-
-// The output of a query, this is here just for reference,
-// ============= Please remove on production =============
-/*const vals = [{
-  "userId": 53888434,
-  "userName": "ogprodigy",
-  "modId": 1171922673,
-  "modLogin": "t4jtesting",
-  "sourceId": 1171922673,
-  "sourceLogin": "t4jtesting",
-  "duration": 59,
-  "reason": "smh my head",
-  "timestamp": 1730105809,
-  "messages": [{
-    "text": "joy to",
-    "sourceId": 1171922673,
-    "sourceLogin": "t4jtesting",
-    "timestamp": 1730105773
-  }, {"text": "the world", "sourceId": "", "sourceLogin": "", "timestamp": 1730105776}, {
-    "text": "that",
-    "sourceId": 1171922673,
-    "sourceLogin": "t4jtesting",
-    "timestamp": 1730105783
-  }]
-}, {
-  "userId": 35958947,
-  "userName": null,
-  "modId": 1171922673,
-  "modLogin": "t4jtesting",
-  "sourceId": 1171922673,
-  "sourceLogin": "t4jtesting",
-  "duration": 1,
-  "reason": "attended jan 6",
-  "timestamp": 1730105657,
-  "messages": []
-}, {
-  "userId": 17337557,
-  "userName": null,
-  "modId": 1171922673,
-  "modLogin": "t4jtesting",
-  "sourceId": 1171922673,
-  "sourceLogin": "t4jtesting",
-  "duration": -1,
-  "reason": "weirdo",
-  "timestamp": 1730105629,
-  "messages": []
-}, {
-  "userId": 268669435,
-  "userName": null,
-  "modId": 1171922673,
-  "modLogin": "t4jtesting",
-  "sourceId": 1171922673,
-  "sourceLogin": "t4jtesting",
-  "duration": 599,
-  "reason": "",
-  "timestamp": 1730105566,
-  "messages": []
-}]*/

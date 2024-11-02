@@ -16,7 +16,12 @@ export const Route = createFileRoute('/connect')({
     })
 
     if (response.ok) {
-      return token
+      const data = await response.json();
+
+      return {
+        token: token,
+        selfId: data["user_id"]
+      }
     } else {
       throw "check failed"
     }
@@ -43,10 +48,11 @@ function Error() {
 }
 
 function Connect() {
-  const token = useLoaderData({from: "/connect"})
+  const { token, selfId } = useLoaderData({from: "/connect"})
   const router = useRouter()
 
   Cookies.set("twitch", token)
+  Cookies.set("self", selfId)
   router.history.push("/app")
   return
 }
