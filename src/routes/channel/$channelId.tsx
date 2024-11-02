@@ -45,7 +45,9 @@ import { Label } from "@/components/ui/label"
 import {Separator} from "@/components/ui/separator.tsx";
 import {Toaster} from "@/components/ui/toaster.tsx";
 import {useToast} from "@/hooks/use-toast"
+import {Clock12Regular, Comment12Regular, Dismiss12Regular, Prohibited12Regular} from "@fluentui/react-icons";
 
+//region Types
 type Moderation = {
   channelLogin: string
   userId: number
@@ -89,6 +91,7 @@ type PollInput = {
   duration?: number
   channelPoints?: number
 }
+//endregion
 
 export const Route = createFileRoute('/channel/$channelId')({
   beforeLoad: () => {
@@ -133,12 +136,10 @@ function /*component*/ Channel() {
   const moderationMap = useMemo(() => {
     const moderationMap: { [id: number]: number } = {};
     moderations.forEach((value, index) => moderationMap[value.userId] = index);
-    console.log(moderationMap)
     return moderationMap;
   }, [moderations]);
 
   useEffect(() => {
-    console.log(moderations)
   }, [moderations]);
 
   const removeModeration = useCallback((index: number) => {
@@ -157,40 +158,16 @@ function /*component*/ Channel() {
     }
 
     setModerations(copy);
-
-    console.log("removed")
   }, [moderations, moderationMap, chatter]);
 
-  const getHistory = (id: number): Moderation => {
+  const getModeration = (id: number): Moderation => {
     return moderations[moderationMap[id]];
   }
-
-  /*const {channelId} = Route.useParams()
-
-  const token = Cookies.get("twitch")!;
-
-  const {isLoading, error, data} = useQuery({
-    queryKey: ['user'],
-    queryFn: () => {
-      if (chatter == null) return null;
-      return fetch(`https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}&user=${chatter}`, {
-        headers: {
-          "Authorization": "Bearer " + token
-        }
-      }).then(async r => {
-        return {
-          status: r.status,
-          ok: r.ok,
-          data: await (r.ok ? r.json() : r.text())
-        }
-      });
-    }
-  })*/
 
   const {data} = useQuery({
     queryKey: ['channels'],
     async queryFn() {
-      const chatters = moderations.map(history => history.userId).map((id) => {
+      const chatters = moderations.map(moderation => moderation.userId).map((id) => {
         return `id=${id}`
       }).join("&")
 
@@ -227,28 +204,28 @@ function /*component*/ Channel() {
             </div>
             <Separator/>
             <ul className={'flex flex-col gap-2 py-4 px-4'}>
-              {moderations.map((history) => (
+              {moderations.map((moderation) => (
                 <li>
                   <button
                     className={cn(
                       "p-4 w-full text-start transition-colors bg-bg-alt hover:bg-bg-hover rounded-medium flex flex-row",
-                      {"bg-bg-hover": chatter === history.userId}
+                      {"bg-bg-hover": chatter === moderation.userId}
                     )}
-                    key={history.userId}
-                    onMouseDown={() => setChatter(history.userId)}
+                    key={moderation.userId}
+                    onMouseDown={() => setChatter(moderation.userId)}
                   >
                     <div className={"w-8 mr-4 rounded-rounded"}>
                       {
-                        <img className={"rounded-rounded"} src={picture(data, history.userId)}/>
+                        <img alt={`${moderation.userName}'s profile image`} className={"rounded-rounded"} src={picture(data, moderation.userId)}/>
                       }
                     </div>
                     <div>
                       <div className={"text-5 leading-heading font-semibold"}>
-                        {history.userName}
+                        {moderation.userName}
                       </div>
                       <div className={"w-full text-nowrap overflow-ellipsis overflow-hidden"}>
-                        <span className={"text-hinted-gray-9"}>{TIME_AGO.format(history.timestamp * 1000)}</span>
-                        <MessageFragment moderation={history}/>
+                        <span className={"text-hinted-gray-9"}>{TIME_AGO.format(moderation.timestamp * 1000)}</span>
+                        <MessageFragment moderation={moderation}/>
                       </div>
                     </div>
                   </button>
@@ -259,7 +236,7 @@ function /*component*/ Channel() {
           <ResizableHandle className={"bg-bg-hover"}/>
           <ResizablePanel className={""}>
             {chatter != null ? (
-              <MessageWindow data={data} deleteFn={() => removeModeration(moderationMap[chatter])} moderation={getHistory(chatter)}/>
+              <MessageWindow data={data} deleteFn={() => removeModeration(moderationMap[chatter])} moderation={getModeration(chatter)}/>
             ) : (
               <>TODO: No moderations action</>
             )}
@@ -334,7 +311,7 @@ function /*component*/ MessageWindow({data, moderation, deleteFn}: { data: UserD
       <div className={"px-8 pt-4 h-full flex flex-col"}>
         <div className={"flex flex-row"}>
           <div>
-            <img className={"w-16 rounded-rounded"} src={picture(data, moderation.userId)}/>
+            <img alt={`${moderation.userName}'s profile image`} className={"w-16 rounded-rounded"} src={picture(data, moderation.userId)}/>
           </div>
           <div className={"px-4"}>
             <div className={"flex flex-row gap-2"}>
@@ -400,7 +377,7 @@ function /*component*/ MessageWindow({data, moderation, deleteFn}: { data: UserD
         <div className={"min-h-20 bg-bg-alt p-8 rounded-t-3xl flex flex-row gap-20 justify-center"}>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="default">Dismiss</Button>
+              <Button h6sb icon={<Dismiss12Regular/>}>Dismiss</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -446,7 +423,7 @@ function /*component*/ MessageWindow({data, moderation, deleteFn}: { data: UserD
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="default">Ban</Button>
+              <Button h6sb icon={<Prohibited12Regular/>}>Ban</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
@@ -471,7 +448,7 @@ function /*component*/ MessageWindow({data, moderation, deleteFn}: { data: UserD
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="default">Timeout</Button>
+              <Button h6sb icon={<Clock12Regular/>}>Timeout</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
@@ -502,7 +479,7 @@ function /*component*/ MessageWindow({data, moderation, deleteFn}: { data: UserD
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="default">Start Chat Poll</Button>
+              <Button h6sb icon={<Comment12Regular/>}>Start Chat Poll</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
