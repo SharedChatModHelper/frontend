@@ -249,7 +249,7 @@ function /*component*/ Channel() {
   );
 }
 
-function /*component*/ MessageWindow({data, moderation, deleteFn}: { data: UserDataIndex | undefined, moderation: Moderation, deleteFn: () => void }) {
+function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { data: UserDataIndex | undefined, loading: boolean, moderation: Moderation, deleteFn: () => void }) {
   const exists = data?.[moderation.userId] != undefined;
   const { toast } = useToast();
   const { channelId } = Route.useParams();
