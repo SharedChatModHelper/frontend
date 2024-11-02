@@ -410,7 +410,8 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
                 if (resp.ok) {
                   toast({
                     description: `Started poll about ${moderation.userName}`
-                  });
+                  })
+                  window.open(`https://www.twitch.tv/popout/${moderation.channelLogin}/poll`, "_blank")
                 } else {
                   const body = await resp.json()
                   toast({

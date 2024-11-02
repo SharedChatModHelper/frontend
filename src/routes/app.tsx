@@ -52,6 +52,7 @@ function /*component*/ App() {
   return (
     <div className={"pt-4 flex flex-col items-center"}>
       <h2 className={"text-center font-semibold"}>Shared Chat Mod Helper</h2>
+      <h4 className={"text-gray-300"}>Please select which channel to moderate</h4>
       <div className={"flex flex-row p-4 flex-wrap justify-center"}>
         {
           channels.map(channel => (
