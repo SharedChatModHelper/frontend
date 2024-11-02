@@ -1,6 +1,11 @@
 import {createFileRoute, Link, redirect, useLoaderData} from '@tanstack/react-router'
 import Cookies from "js-cookie";
 import {queryClient} from "@/main.tsx";
+import {Checkbox} from "@/components/ui/checkbox.tsx";
+import {Label} from "@/components/ui/label.tsx";
+import {useState} from "react";
+import {CheckedState} from "@radix-ui/react-checkbox";
+import {BOT_ID, CLIENT_ID} from "@/lib/constants.ts";
 
 export const Route = createFileRoute('/app')({
   beforeLoad: () => {
@@ -48,6 +53,44 @@ function /*component*/ Card({channel}: { channel: Channel }) {
 
 function /*component*/ App() {
   const channels = useLoaderData({from: '/app'});
+  const token = Cookies.get('twitch');
+  const selfId = Cookies.get('self');
+  const [modded, setModded] = useState("indeterminate" as CheckedState)
+  const [moddedReady, setModdedReady] = useState(false)
+
+  const moddedUrl = `https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${selfId}&user_id=${BOT_ID}`
+  fetch(moddedUrl,
+      {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Client-Id": CLIENT_ID
+        }
+      })
+      .then(resp => resp.json())
+      .then(body => setModded(!!body.data[0]))
+      .catch(e => console.error("Failed to check mod status", e))
+      .finally(() => setModdedReady(true))
+
+  const handleModChecked = async (checked: CheckedState) => {
+    if (checked === "indeterminate") return
+    try {
+      const resp = await fetch(moddedUrl, {
+        method: checked ? "POST" : "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Client-Id": CLIENT_ID
+        }
+      })
+      if (resp.ok) {
+        setModded(checked)
+      } else {
+        const body = await resp.json()
+        console.error(`Failed to set desired bot moderator status: ${body.message}`)
+      }
+    } catch (e) {
+      console.error("Could not set desired bot moderator status", e)
+    }
+  }
 
   return (
     <div className={"pt-4 flex flex-col items-center"}>
@@ -59,6 +102,10 @@ function /*component*/ App() {
             <Card channel={channel}/>
           ))
         }
+      </div>
+      <div className={"flex items-center space-x-2"}>
+        <Checkbox id="modded" checked={modded} onCheckedChange={handleModChecked} disabled={!moddedReady} />
+        <Label htmlFor="modded">Allow bot to operate in my chat</Label>
       </div>
     </div>
   )

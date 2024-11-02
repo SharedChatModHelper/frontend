@@ -6,6 +6,7 @@ TimeAgo.addDefaultLocale(en)
 export const BASE_URL = import.meta.env.BASE_URL
 export const AUTH_URL = encodeURI(`https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=bl85f43cvyijabp6xwgu075twictrs&redirect_uri=${BASE_URL}/connect&scope=channel:manage:moderators channel:manage:polls moderator:manage:banned_users moderator:read:banned_users moderator:read:blocked_terms moderator:read:chat_messages moderator:read:chat_settings moderator:read:followers moderator:read:moderators moderator:read:shield_mode moderator:read:suspicious_users moderator:read:unban_requests moderator:read:vips moderator:read:warnings user:bot user:read:chat user:read:moderated_channels`)
 export const CLIENT_ID = "bl85f43cvyijabp6xwgu075twictrs"
+export const BOT_ID = "1170196343"
 export const TIME_AGO = new TimeAgo('en-US')
 
 export const DEFAULT_PICTURES = [
