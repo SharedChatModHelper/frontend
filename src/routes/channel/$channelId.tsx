@@ -514,7 +514,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
           Messages will go here
         </div>
 
-        <div className={"min-h-20 bg-bg-alt p-8 rounded-t-extra-extra-large flex flex-row gap-20 justify-center"}>
+        <div className={"min-h-24 bg-bg-alt p-4 rounded-t-extra-extra-large flex flex-row gap-20 justify-center items-center"}>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button h6sb icon={<Dismiss12Regular/>}>Dismiss</Button>
