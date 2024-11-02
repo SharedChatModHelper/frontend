@@ -455,7 +455,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
       <div className={"px-8 pt-4 h-full flex flex-col"}>
         <div className={"flex flex-row"}>
           <div>
-            <img alt={`${moderation.userName}'s profile image`} className={`w-16 rounded-rounded ${streamerMode ? "blur" : ""}`} src={picture(data, moderation.userId)}/>
+            <img alt={moderation.userName} className={cn("w-16 rounded-rounded", {"blur": streamerMode})} src={picture(data, moderation.userId)}/>
           </div>
           <div className={"px-4"}>
             <div className={"flex flex-row gap-2"}>
@@ -481,7 +481,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
           </div>
           <div className={"flex flex-col basis-full"}>
             <p>Moderated by</p>
-            <p className={`font-semibold ${streamerMode ? "blur" : ""}`}>{moderation.modLogin}</p>
+            <p className={cn("font-semibold", {"blur": streamerMode})}>{moderation.modLogin}</p>
           </div>
           <div className={"flex flex-col basis-full"}>
             <p>Moderated at</p>
