@@ -32,6 +32,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {Button} from "@/components/ui/button.tsx";
+import {Checkbox} from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogClose,
@@ -135,6 +136,7 @@ function /*component*/ Channel() {
   const token = Cookies.get('twitch'); //TODO: use context instead
   const [moderations, setModerations]: [Moderation[], (value: Moderation[]) => void] = useState(useLoaderData({from: '/channel/$channelId'}).slice(0, 100));
   const [chatter, setChatter] = useState(moderations[0]?.userId as number | null);
+  const [streamerMode, setStreamerMode] = useState(false);
 
   const moderationMap = useMemo(() => {
     const moderationMap: { [id: number]: number } = {};
@@ -197,9 +199,13 @@ function /*component*/ Channel() {
 
   return (
     <>
-      <div className={"min-h-14 bg-bg-alt font-semibold uppercase flex items-center pl-6 pr-4"}>
+      <div className={"min-h-14 bg-bg-alt flex items-center pl-6 pr-4"}>
         <Link href={"/app"} className={"text-white hover:text-twitch-purple-11 transition-colors"}><ArrowLeft12Regular className={"mr-4 size-[1.6rem]"}/></Link>
-        <p>Shared chat mod helper</p>
+        <p className={"font-semibold uppercase mr-auto"}>Shared chat mod helper</p>
+        <div className={"flex items-center space-x-2"}>
+          <Checkbox id="streamer" checked={streamerMode} onCheckedChange={(checked) => setStreamerMode(!!checked)} />
+          <Label htmlFor="streamer">Streamer Mode</Label>
+        </div>
       </div>
       <div>
         <ResizablePanelGroup direction="horizontal" className={'min-h-[calc(100vh-3.5rem)]'}>
@@ -221,7 +227,7 @@ function /*component*/ Channel() {
                   >
                     <div className={"w-8 mr-4 rounded-rounded"}>
                       {
-                        <img alt={`${moderation.userName}'s profile image`} className={"rounded-rounded"} src={picture(data, moderation.userId)}/>
+                        <img alt={`${moderation.userName}'s profile image`} className={`rounded-rounded ${streamerMode ? "blur" : ""}`} src={picture(data, moderation.userId)}/>
                       }
                     </div>
                     <div>
@@ -241,7 +247,7 @@ function /*component*/ Channel() {
           <ResizableHandle className={"bg-bg-hover"}/>
           <ResizablePanel className={""}>
             {chatter != null ? (
-              <MessageWindow data={data} loading={isLoading} deleteFn={() => removeModeration(moderationMap[chatter])} moderation={getModeration(chatter)}/>
+              <MessageWindow data={data} loading={isLoading} streamerMode={streamerMode} deleteFn={() => removeModeration(moderationMap[chatter])} moderation={getModeration(chatter)}/>
             ) : (
               <>TODO: No moderations action</>
             )}
@@ -253,7 +259,7 @@ function /*component*/ Channel() {
   );
 }
 
-function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { data: UserDataIndex | undefined, loading: boolean, moderation: Moderation, deleteFn: () => void }) {
+function /*component*/ MessageWindow({data, loading, streamerMode, moderation, deleteFn}: { data: UserDataIndex | undefined, loading: boolean, streamerMode: boolean, moderation: Moderation, deleteFn: () => void }) {
   const exists = data?.[moderation.userId] != undefined;
   const { toast } = useToast();
   const { channelId } = Route.useParams();
@@ -448,7 +454,7 @@ function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { da
       <div className={"px-8 pt-4 h-full flex flex-col"}>
         <div className={"flex flex-row"}>
           <div>
-            <img alt={`${moderation.userName}'s profile image`} className={"w-16 rounded-rounded"} src={picture(data, moderation.userId)}/>
+            <img alt={`${moderation.userName}'s profile image`} className={`w-16 rounded-rounded ${streamerMode ? "blur" : ""}`} src={picture(data, moderation.userId)}/>
           </div>
           <div className={"px-4"}>
             <div className={"flex flex-row gap-2"}>
@@ -474,7 +480,7 @@ function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { da
           </div>
           <div className={"flex flex-col basis-full"}>
             <p>Moderated by</p>
-            <p className={"font-semibold"}>{moderation.modLogin}</p>
+            <p className={`font-semibold ${streamerMode ? "blur" : ""}`}>{moderation.modLogin}</p>
           </div>
           <div className={"flex flex-col basis-full"}>
             <p>Moderated at</p>
