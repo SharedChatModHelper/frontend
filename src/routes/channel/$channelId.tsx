@@ -1,5 +1,5 @@
 import {
-  createFileRoute,
+  createFileRoute, Link,
   redirect,
   useLoaderData,
 } from '@tanstack/react-router'
@@ -45,7 +45,13 @@ import { Label } from "@/components/ui/label"
 import {Separator} from "@/components/ui/separator.tsx";
 import {Toaster} from "@/components/ui/toaster.tsx";
 import {useToast} from "@/hooks/use-toast"
-import {Clock12Regular, Comment12Regular, Dismiss12Regular, Prohibited12Regular} from "@fluentui/react-icons";
+import {
+  ArrowLeft12Regular,
+  Clock12Regular,
+  Comment12Regular,
+  Dismiss12Regular,
+  Prohibited12Regular
+} from "@fluentui/react-icons";
 import {queryClient} from "@/main.tsx";
 
 //region Types
@@ -118,12 +124,7 @@ export const Route = createFileRoute('/channel/$channelId')({
     return response
   },
   component: Channel,
-  pendingComponent: Pending,
 })
-
-function /*component*/ Pending() {
-  return <>TODO: Loading page</>
-}
 
 function picture(pictures: UserDataIndex | undefined, id: number) {
   return pictures?.[id.toString()]?.profile_image_url ?? defaultPicture(id);
@@ -195,7 +196,9 @@ function /*component*/ Channel() {
 
   return (
     <>
-      <div className={"min-h-14 bg-bg-alt font-semibold uppercase flex items-center pl-8 pr-4"}>Shared chat mod helper
+      <div className={"min-h-14 bg-bg-alt font-semibold uppercase flex items-center pl-6 pr-4"}>
+        <Link href={"/app"} className={"text-white hover:text-twitch-purple-11 transition-colors"}><ArrowLeft12Regular className={"mr-4 size-[1.6rem]"}/></Link>
+        <p>Shared chat mod helper</p>
       </div>
       <div>
         <ResizablePanelGroup direction="horizontal" className={'min-h-[calc(100vh-3.5rem)]'}>

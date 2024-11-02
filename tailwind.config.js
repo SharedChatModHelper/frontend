@@ -22,22 +22,19 @@ export default {
       7: "1.2rem",
       8: "1rem",
     },
+    borderRadius: {
+      none: "0",
+      small: ".2rem",
+      medium: ".4rem",
+      large: ".6rem",
+      "extra-large": "1rem",
+      "extra-extra-large": "1.6rem",
+      rounded: "9000px",
+    },
     extend: {
       leading: {
         body: 1.5,
         heading: 1.2
-      },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-        none: "0",
-        small: ".2rem",
-        medium: ".4rem",
-        large: ".6rem",
-        "extra-large": "1rem",
-        "extra-extra-large": "1.6rem",
-        rounded: "9000px",
       },
       colors: {
         "bg-base": "var(--background-base)",

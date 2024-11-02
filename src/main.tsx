@@ -20,7 +20,6 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 60 // 1 minute
     },
   }
-
 })
 
 const persister = createSyncStoragePersister({
@@ -50,7 +49,7 @@ declare module '@tanstack/react-router' {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
-      <RouterProvider defaultPendingMinMs={100} router={router}/>
+      <RouterProvider defaultPendingMs={10} defaultPendingMinMs={100} router={router}/>
     </PersistQueryClientProvider>
   </StrictMode>,
 )

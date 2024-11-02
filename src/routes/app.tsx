@@ -1,4 +1,4 @@
-import {createFileRoute, redirect, useLoaderData} from '@tanstack/react-router'
+import {createFileRoute, Link, redirect, useLoaderData} from '@tanstack/react-router'
 import Cookies from "js-cookie";
 import {queryClient} from "@/main.tsx";
 
@@ -16,16 +16,9 @@ export const Route = createFileRoute('/app')({
           headers: {
             "Authorization": `Bearer ${token}`
           }
-        }).then(async r => {
-          return {
-            status: r.status,
-            ok: r.ok,
-            data: await r.json()
-          }
-        })
+        }).then(async r => await r.json() as Channel[])
     })
   },
-  pendingComponent: Pending,
   component: App,
 })
 
@@ -35,28 +28,37 @@ type Channel = {
   image_url: string
 }
 
-function /*component*/ Pending() {
+function /*component*/ Card({channel}: { channel: Channel }) {
   return (
-    <>TODO: Loading page</>
+    <Link
+      href={`/channel/${channel.channel_id}`}
+      className={"mx-2 my-2 border-bg-alt border-solid border-2 rounded-large bg-bg-hover p-6 text-white hover:text-white cursor-pointer hover:scale-[1.02] transition-transform shadow w-[25rem] max-w-[35rem] flex-grow"}
+    >
+      <div className={"flex flex-col items-center"}>
+        <div className={"pb-6 pt-2"}>
+          <img className={"w-32 rounded-rounded"} alt={`${channel.channel_name}`} src={channel.image_url}/>
+        </div>
+        <div>
+          <h4 className={"font-semibold"}>{channel.channel_name}</h4>
+        </div>
+      </div>
+    </Link>
   )
 }
 
-function App() {
-  const data = useLoaderData({from: '/app'})
-
-  const channels: Channel[] = data.data
+function /*component*/ App() {
+  const channels = useLoaderData({from: '/app'});
 
   return (
-    <>
-      <ul>
+    <div className={"pt-4 flex flex-col items-center"}>
+      <h2 className={"text-center font-semibold"}>Shared Chat Mod Helper</h2>
+      <div className={"flex flex-row p-4 flex-wrap justify-center"}>
         {
           channels.map(channel => (
-            <li key={channel.channel_id}>
-              <a href={`/channel/${channel.channel_id}`}>{channel.channel_name}</a>
-            </li>
+            <Card channel={channel}/>
           ))
         }
-      </ul>
-    </>
+      </div>
+    </div>
   )
 }

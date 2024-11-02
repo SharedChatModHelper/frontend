@@ -1,6 +1,8 @@
 import React, {Suspense} from "react";
-import { createRootRoute, Outlet } from '@tanstack/react-router'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import {createRootRoute, Outlet, useRouterState} from '@tanstack/react-router'
+import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
+import {Pending} from "@/Components.tsx";
+import {cn} from "@/lib/utils.ts";
 
 const TanStackRouterDevtools =
   process.env.NODE_ENV === 'production'
@@ -15,13 +17,25 @@ const TanStackRouterDevtools =
     )
 
 export const Route = createRootRoute({
-  component: () => (
+  component: Root
+})
+
+function /*component*/ Root() {
+  const isLoading = useRouterState({
+    select: (s) => s.status === 'pending',
+  })
+
+  return (
     <>
-      <Outlet />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <Pending className={cn("transition-all", {
+        "opacity-100 visible": isLoading,
+        "opacity-0 invisible": !isLoading
+      })}/>
+      <Outlet/>
+      <ReactQueryDevtools initialIsOpen={false}/>
       <Suspense>
-        <TanStackRouterDevtools />
+        <TanStackRouterDevtools/>
       </Suspense>
     </>
-  ),
-})
+  );
+}
