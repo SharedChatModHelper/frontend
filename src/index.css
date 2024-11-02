@@ -4,13 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-family: theme("fontFamily.base");
+  }
+}
+
 :root {
   --background-base: theme('colors.hinted-gray.1');
   --background-body: theme('colors.hinted-gray.2');
   --background-alt: theme('colors.hinted-gray.3');
   --background-hover: theme('colors.opac.gd.2');
-
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 1);

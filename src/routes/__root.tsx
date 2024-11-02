@@ -1,5 +1,6 @@
 import React, {Suspense} from "react";
 import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 const TanStackRouterDevtools =
   process.env.NODE_ENV === 'production'
@@ -17,6 +18,7 @@ export const Route = createRootRoute({
   component: () => (
     <>
       <Outlet />
+      <ReactQueryDevtools initialIsOpen={false} />
       <Suspense>
         <TanStackRouterDevtools />
       </Suspense>

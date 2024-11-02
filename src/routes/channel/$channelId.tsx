@@ -46,6 +46,7 @@ import {Separator} from "@/components/ui/separator.tsx";
 import {Toaster} from "@/components/ui/toaster.tsx";
 import {useToast} from "@/hooks/use-toast"
 import {Clock12Regular, Comment12Regular, Dismiss12Regular, Prohibited12Regular} from "@fluentui/react-icons";
+import {queryClient} from "@/main.tsx";
 
 //region Types
 type Moderation = {
@@ -101,27 +102,27 @@ export const Route = createFileRoute('/channel/$channelId')({
     const {channelId} = ctx.params
     const token = Cookies.get('twitch')!
 
-    const response = await fetch(
-      `https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}`,
-      {
-        headers: {
-          Authorization: 'Bearer ' + token,
+    const response = await queryClient.fetchQuery({
+      queryKey: [`histories`, channelId],
+      queryFn: () => fetch(
+        `https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}`,
+        {
+          headers: {
+            Authorization: 'Bearer ' + token,
+          },
         },
-      },
-    )
+      ).then(value => value.json()),
 
-    if (!response.ok) {
-      throw response
-    }
+    })
 
-    return await response.json()
+    return response
   },
   component: Channel,
   pendingComponent: Pending,
 })
 
 function /*component*/ Pending() {
-  return <>Hello, I'm loading</>;
+  return <>TODO: Loading page</>
 }
 
 function picture(pictures: UserDataIndex | undefined, id: number) {
@@ -164,8 +165,8 @@ function /*component*/ Channel() {
     return moderations[moderationMap[id]];
   }
 
-  const {data} = useQuery({
-    queryKey: ['channels'],
+  const {isLoading, data} = useQuery({
+    queryKey: [`user_info`, moderations.reduce((acc, curr) => (acc * 31 + curr.userId) | 0, 17)],
     async queryFn() {
       const chatters = moderations.map(moderation => moderation.userId).map((id) => {
         return `id=${id}`
@@ -236,7 +237,7 @@ function /*component*/ Channel() {
           <ResizableHandle className={"bg-bg-hover"}/>
           <ResizablePanel className={""}>
             {chatter != null ? (
-              <MessageWindow data={data} deleteFn={() => removeModeration(moderationMap[chatter])} moderation={getModeration(chatter)}/>
+              <MessageWindow data={data} loading={isLoading} deleteFn={() => removeModeration(moderationMap[chatter])} moderation={getModeration(chatter)}/>
             ) : (
               <>TODO: No moderations action</>
             )}
@@ -306,6 +307,15 @@ function /*component*/ MessageWindow({data, moderation, deleteFn}: { data: UserD
     }
   });
 
+  let accountDetails: string;
+  if (loading) {
+    accountDetails = `Loading information`;
+  } else if (exists) {
+    accountDetails = `Account created ${localizedLongDay(data?.[moderation.userId]?.created_at, "en-US")}`;
+  } else {
+    accountDetails = "Account banned or deactivated";
+  }
+
   return (
     <>
       <div className={"px-8 pt-4 h-full flex flex-col"}>
@@ -326,11 +336,7 @@ function /*component*/ MessageWindow({data, moderation, deleteFn}: { data: UserD
                 "text-red-10": !exists,
               }
             )}>
-              {
-                exists ?
-                  `Account created ${localizedLongDay(data?.[moderation.userId]?.created_at, "en-US")}`
-                  : "Account banned or deactivated"
-              }
+              {accountDetails}
             </p>
           </div>
         </div>
