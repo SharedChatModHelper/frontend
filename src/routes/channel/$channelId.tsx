@@ -34,6 +34,7 @@ import {
 import {Button} from "@/components/ui/button.tsx";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription, DialogFooter,
   DialogHeader,
@@ -270,9 +271,8 @@ function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { da
     }
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const ban = useMutation({
-    mutationFn: (banData) => {
+    mutationFn: (banData: { user_id: number, reason?: string, duration?: number }) => {
       return fetch(`https://api.twitch.tv/helix/moderation/bans?broadcaster_id=${channelId}&moderator_id=${selfId}`, {
         method: "POST",
         headers: {
@@ -281,11 +281,56 @@ function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { da
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ data: banData }),
-      }).then(resp => resp.json())
+      })
     }
   });
+  const banUser = async (duration: number, reasonElement: HTMLInputElement) => {
+    const actionName = duration > 0 ? "timeout" : "ban"
+    const actionNamePast = duration > 0 ? "timed-out" : "banned"
+    try {
+      const resp = await ban.mutateAsync({
+        "user_id": moderation.userId,
+        "reason": reasonElement.value,
+        "duration": duration > 0 ? duration : undefined
+      })
+      if (resp.ok) {
+        toast({
+          description: `Successfully ${actionNamePast} ${moderation.userName}`
+        })
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        try {
+          const resp = await dismiss.mutateAsync({ userId: moderation.userId });
+          if (resp.ok) {
+            deleteFn()
+          } else {
+            const body = await resp.json()
+            console.error(`Failed to delete logs of ${moderation.userName} due to ${body.error}`)
+          }
+        } catch (e) {
+          console.error(`Could not delete logs of ${moderation.userName}`, e)
+        } finally {
+          dismiss.reset()
+        }
+      } else {
+        const body = await resp.json()
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: `Failed to ${actionName} ${moderation.userName} due to ${body.error}`
+        })
+      }
+    } catch (e) {
+      console.error(e)
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: `Could not ${actionName} ${moderation.userName}; try again later`
+      })
+    } finally {
+      ban.reset()
+    }
+  }
+
   const poll = useMutation({
     mutationFn: (pollData: PollInput) => {
       return fetch("https://api.twitch.tv/helix/polls", {
@@ -302,13 +347,92 @@ function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { da
             {"title": "Yes"},
             {"title": "No"}
           ],
-          "duration": pollData?.duration ?? 60,
+          "duration": Math.max(pollData?.duration ?? 60, 15),
           "channel_points_voting_enabled": !!pollData?.channelPoints,
           "channel_points_per_vote": pollData?.channelPoints
         })
-      }).then(resp => resp.json())
+      })
     }
   });
+
+  let pollElement
+  if (channelId === selfId) {
+    // must have broadcaster token to start a poll
+    pollElement = <Dialog>
+      <DialogTrigger asChild>
+        <Button h6sb icon={<Comment12Regular/>}>Start Chat Poll</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Poll Details</DialogTitle>
+          <DialogDescription>
+            Customize the poll here. Click execute once done.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="polltitle" className="text-right">
+              Title
+            </Label>
+            <Input id="polltitle" defaultValue="Should we punish this chatter?" className="col-span-3"/>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="pollduration" className="text-right">
+              Seconds
+            </Label>
+            <Input id="pollduration" type="number" defaultValue="60" min="0" max="1800" className="col-span-3"/>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="pollpoints" className="text-right">
+              Channel Points
+            </Label>
+            <Input id="pollpoints" type="number" defaultValue="0" min="0" max="1000000" className="col-span-3"/>
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" onClick={async () => {
+              const titleEl = document.getElementById("polltitle") as HTMLInputElement
+              const secondsEl = document.getElementById("pollduration") as HTMLInputElement
+              const pointsEl = document.getElementById("pollpoints") as HTMLInputElement
+              try {
+                const resp = await poll.mutateAsync({
+                  title: titleEl.value,
+                  duration: secondsEl.valueAsNumber,
+                  channelPoints: pointsEl.valueAsNumber
+                })
+                if (resp.ok) {
+                  toast({
+                    description: `Started poll about ${moderation.userName}`
+                  });
+                } else {
+                  const body = await resp.json()
+                  toast({
+                    variant: "destructive",
+                    title: "Uh oh! Something went wrong.",
+                    description: `Failed to start poll about ${moderation.userName}: ${body.message}`
+                  })
+                }
+              } catch (e) {
+                console.error(e)
+                toast({
+                  variant: "destructive",
+                  title: "Uh oh! Something went wrong.",
+                  description: `Could not start poll about ${moderation.userName}; try again later`
+                })
+              } finally {
+                poll.reset()
+              }
+            }}>
+              Execute
+            </Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  } else {
+    pollElement = <></>
+  }
 
   let accountDetails: string;
   if (loading) {
@@ -418,7 +542,7 @@ function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { da
                     toast({
                       variant: "destructive",
                       title: "Uh oh! Something went wrong.",
-                      description: `Failed to dismiss logs for ${moderation.userName}; try again later`
+                      description: `Could not dismiss logs for ${moderation.userName}; try again later`
                     })
                   } finally {
                     dismiss.reset()
@@ -443,14 +567,18 @@ function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { da
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="reason" className="text-right">
+                  <Label htmlFor="banreason" className="text-right">
                     Reason
                   </Label>
-                  <Input id="reason" defaultValue="Reinstated shared chat ban" className="col-span-3" />
+                  <Input id="banreason" defaultValue="Reinstated shared chat ban" className="col-span-3" />
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit">Execute</Button>
+                <DialogClose asChild>
+                  <Button type="button" onClick={async () => await banUser(-1, document.getElementById("banreason") as HTMLInputElement)}>
+                    Execute
+                  </Button>
+                </DialogClose>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -468,60 +596,33 @@ function /*component*/ MessageWindow({data, loading, moderation, deleteFn}: { da
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="duration" className="text-right">
+                  <Label htmlFor="timeoutduration" className="text-right">
                     Seconds
                   </Label>
-                  <Input id="duration" type="number" defaultValue="600" className="col-span-3"/>
+                  <Input id="timeoutduration" type="number" defaultValue="600" min="1" max="1209600" className="col-span-3"/>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="reason" className="text-right">
+                  <Label htmlFor="timeoutreason" className="text-right">
                     Reason
                   </Label>
-                  <Input id="reason" defaultValue="Reinstated shared chat timeout" className="col-span-3"/>
+                  <Input id="timeoutreason" defaultValue="Reinstated shared chat timeout" className="col-span-3"/>
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit">Execute</Button>
+                <DialogClose asChild>
+                  <Button type="button" onClick={async () => {
+                    const duration = document.getElementById("timeoutduration") as HTMLInputElement
+                    const reason = document.getElementById("timeoutreason") as HTMLInputElement
+                    await banUser(duration.valueAsNumber, reason)
+                  }}>
+                    Execute
+                  </Button>
+                </DialogClose>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button h6sb icon={<Comment12Regular/>}>Start Chat Poll</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Poll Details</DialogTitle>
-                <DialogDescription>
-                  Customize the poll here. Click execute once done.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="title" className="text-right">
-                    Title
-                  </Label>
-                  <Input id="title" defaultValue="Should we punish this chatter?" className="col-span-3"/>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="duration" className="text-right">
-                    Seconds
-                  </Label>
-                  <Input id="duration" type="number" defaultValue="60" className="col-span-3"/>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="points" className="text-right">
-                    Channel Points
-                  </Label>
-                  <Input id="points" type="number" defaultValue="0" className="col-span-3"/>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit">Execute</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          {pollElement}
         </div>
       </div>
     </>
