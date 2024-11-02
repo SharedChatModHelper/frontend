@@ -225,12 +225,12 @@ function /*component*/ Channel() {
                     key={moderation.userId}
                     onMouseDown={() => setChatter(moderation.userId)}
                   >
-                    <div className={"w-8 mr-4 rounded-rounded"}>
+                    <div className={"w-8 mr-4 rounded-rounded flex-shrink-0"}>
                       {
                         <img alt={`${moderation.userName}'s profile image`} className={`rounded-rounded ${streamerMode ? "blur" : ""}`} src={picture(data, moderation.userId)}/>
                       }
                     </div>
-                    <div>
+                    <div className={"min-w-0"}>
                       <div className={"text-5 leading-heading font-semibold"}>
                         {moderation.userName}
                       </div>
