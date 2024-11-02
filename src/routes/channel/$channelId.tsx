@@ -481,7 +481,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
           </div>
           <div className={"flex flex-col basis-full"}>
             <p>Moderated by</p>
-            <p className={cn("font-semibold", {"blur": streamerMode})}>{moderation.modLogin}</p>
+            <p className={cn("font-semibold", {"blur": streamerMode})}>{streamerMode ? "hidden_moderator" : moderation.modLogin}</p>
           </div>
           <div className={"flex flex-col basis-full"}>
             <p>Moderated at</p>
