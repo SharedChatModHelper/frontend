@@ -74,8 +74,8 @@ function Index() {
                   How does it help?
                 </AccordionTrigger>
                 <AccordionContent>
-                  Twitch doesn't offer a convenient interface to selectively view <i>shared</i> moderation actions,
-                  so we bridge that gap in order to improve safety for channels that regularly collaborate with others.
+                  We offer a novel, convenient interface to selectively view and manage <i>shared</i> moderation actions,
+                  improving safety for channels that regularly collaborate with others.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-3">
