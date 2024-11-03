@@ -254,7 +254,7 @@ function /*component*/ Channel() {
             ) : (
               <div className={"h-full"}>
                 <div className={"w-full h-full relative my-auto flex flex-col items-center justify-center text-hinted-gray-9"}>
-                  <span className={"size-[3rem]"}><IconGavel/></span>
+                  <span className={"size-12"}><IconGavel/></span>
                   <p className={"pt-2 text-5"}>No pending actions found</p>
                 </div>
               </div>
@@ -540,7 +540,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
           moderation.messages.length > 0 ?
             moderation.messages.map(message => <Message chatter={moderation.userName} message={message}/>) :
             <div className={"w-full h-full relative my-auto flex flex-col items-center justify-center text-hinted-gray-9"}>
-              <span className={"size-[3rem]"}><IconCommentOff/></span>
+              <span className={"size-12"}><IconCommentOff/></span>
               <p className={"pt-2 text-5"}>No recent messages</p>
             </div>
         }
