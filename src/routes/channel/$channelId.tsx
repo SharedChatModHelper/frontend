@@ -478,7 +478,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
             {moderation.duration != -1 ? localizedDuration(moderation.duration) : "Infinite"}
           </p>
         </div>
-        <div className={"flex flex-col basis-full"}>
+        <div className={"flex flex-col"} style={{flexBasis: "175%"}}>
           <p>Reason</p>
           <TooltipProvider delayDuration={100}>
             <Tooltip>
@@ -512,6 +512,18 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
               <span className={"size-12"}><IconCommentOff/></span>
               <p className={"pt-2 text-5"}>No recent messages</p>
             </div>
+        }
+        {
+          moderation.messages.length > 0 ?
+            <Message chatter={streamerMode ? "[redacted]" : moderation.modLogin} message={
+              Object.assign({}, moderation.messages[0], {
+                text: moderation.duration > 0
+                  ? `timed-out ${moderation.userName} for ${moderation.duration} seconds ${moderation.reason ? `with reason: ${moderation.reason}` : ""}`
+                  : `banned ${moderation.userName} ${moderation.reason ? `with reason: ${moderation.reason}` : ""}`,
+                timestamp: moderation.timestamp
+              }) as Message
+            }/>
+            : <></>
         }
       </ScrollArea>
 
