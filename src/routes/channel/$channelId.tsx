@@ -665,7 +665,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
 function /*component*/ Message({chatter, message}: { chatter: string, message: Message }) {
   return (
     <div className={"py-2 word-break"}>
-      <span className={"text-hinted-gray-9 mr-2"}>{localizedTime(message.timestamp)}</span>
+      <span className={"text-hinted-gray-9 mr-2"}>{localizedTime(message.timestamp * 1000)}</span>
       <span className={"font-bold"}>{chatter}</span>
       <span>:&nbsp;</span>
       <span>{message.text}</span>
