@@ -59,6 +59,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip.tsx";
 import {ScrollArea} from "@/components/ui/scroll-area.tsx";
+import {ShieldAlert} from "lucide-react";
 
 //region Types
 type Moderation = {
@@ -288,6 +289,20 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
         headers: {
           "Authorization": `Bearer ${token}`
         }
+      })
+    }
+  });
+
+  const warn = useMutation({
+    mutationFn: (warnData: { user_id: number, reason: string }) => {
+      return fetch(`https://api.twitch.tv/helix/moderation/warnings?broadcaster_id=${channelId}&moderator_id=${selfId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Client-Id": CLIENT_ID,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({data: warnData}),
       })
     }
   });
@@ -593,6 +608,74 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button h6sb icon={<ShieldAlert/>}>Warn</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Warning Details</DialogTitle>
+              <DialogDescription>
+                Customize the warning here. Click execute once done.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="warnreason" className="text-right">
+                  Reason
+                </Label>
+                <Input id="warnreason" className="col-span-3" defaultValue="Please comply with the chat rules"/>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" onClick={async () => {
+                  const reason = document.getElementById("warnreason") as HTMLInputElement
+                  try {
+                    const resp = await warn.mutateAsync({user_id: moderation.userId, reason: reason.value})
+                    if (resp.ok) {
+                      toast({
+                        description: `Successfully warned ${moderation.userName}`
+                      })
+                      try {
+                        const resp = await dismiss.mutateAsync({ userId: moderation.userId });
+                        if (resp.ok) {
+                          deleteFn()
+                        } else {
+                          const body = await resp.json()
+                          console.error(`Failed to delete logs of ${moderation.userName} due to ${body.error}`)
+                        }
+                      } catch (e) {
+                        console.error(`Could not delete logs of ${moderation.userName}`, e)
+                      } finally {
+                        dismiss.reset()
+                      }
+                    } else {
+                      const body = await resp.json()
+                      toast({
+                        variant: "destructive",
+                        title: "Uh oh! Something went wrong.",
+                        description: `Failed to warn ${moderation.userName}: ${body.error}`
+                      })
+                    }
+                  } catch (e) {
+                    console.error(e)
+                    toast({
+                      variant: "destructive",
+                      title: "Uh oh! Something went wrong.",
+                      description: `Could not warn ${moderation.userName}; try again later`
+                    })
+                  } finally {
+                    warn.reset()
+                  }
+                }}>
+                  Execute
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog>
           <DialogTrigger asChild>
