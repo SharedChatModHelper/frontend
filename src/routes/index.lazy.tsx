@@ -51,7 +51,7 @@ function Index() {
             <h4 className="italic text-hinted-gray-9">
               A moderator's best friend for Shared Chat.
             </h4>
-            <SimpleButton h6sb asChild className={"cursor-pointer text-inherit hover:text-inherit hover:decoration-none"}>
+            <SimpleButton h6sb variant={connected ? "default" : "brand"} asChild className={"cursor-pointer text-inherit hover:text-inherit hover:decoration-none"}>
               {
                 !connected ?
                   <a href={AUTH_URL}>
