@@ -1,10 +1,11 @@
-import {createFileRoute, Link, redirect, useLoaderData} from '@tanstack/react-router'
+import {createFileRoute, Link, redirect, useLoaderData, useRouter} from '@tanstack/react-router'
 import Cookies from "js-cookie";
 import {queryClient} from "@/main.tsx";
 import {Label} from "@/components/ui/label.tsx";
 import {useState} from "react";
 import {CheckedState} from "@radix-ui/react-checkbox";
 import {BOT_ID, CLIENT_ID} from "@/lib/constants.ts";
+import {Button} from "@/components/ui/button.tsx";
 import {Switch} from "@/components/ui/switch.tsx";
 
 export const Route = createFileRoute('/app')({
@@ -54,10 +55,11 @@ function /*component*/ Card({channel}: { channel: Channel }) {
 
 function /*component*/ App() {
   const channels = useLoaderData({from: '/app'});
-  const token = Cookies.get('twitch');
-  const selfId = Cookies.get('self');
   const [modded, setModded] = useState(false)
   const [moddedReady, setModdedReady] = useState(false)
+  const router = useRouter()
+  const token = Cookies.get('twitch');
+  const selfId = Cookies.get('self');
 
   const moddedUrl = `https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${selfId}&user_id=${BOT_ID}`
   fetch(moddedUrl,
@@ -95,6 +97,15 @@ function /*component*/ App() {
 
   return (
     <div className={"pt-4 flex flex-col items-center"}>
+      <div className={"absolute top-4 right-4"}>
+        <Button variant="destructive" onClick={() => {
+          Cookies.remove("twitch");
+          Cookies.remove("self");
+          router.history.push("/");
+        }}>
+          Logout
+        </Button>
+      </div>
       <h2 className={"text-center font-semibold"}>Shared Chat Mod Helper</h2>
       <h4 className={"text-gray-300"}>Please select which channel to moderate</h4>
       <div className={"flex flex-row p-4 flex-wrap justify-center"}>

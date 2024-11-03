@@ -1,5 +1,5 @@
-import {createLazyFileRoute} from '@tanstack/react-router'
-import {Button} from "@/components/ui/button.tsx";
+import {createLazyFileRoute, Link} from '@tanstack/react-router'
+import {SimpleButton} from "@/components/ui/button.tsx";
 import {AUTH_URL} from "@/lib/constants.ts";
 import {Check, Twitch} from "lucide-react";
 import {
@@ -8,57 +8,92 @@ import {
   AccordionItem,
   AccordionTrigger
 } from "@/components/ui/accordion.tsx";
+import Cookies from "js-cookie";
+import {IconGavel} from "@/components/Icons.tsx";
+import {ReactNode} from "react";
 
 export const Route = createLazyFileRoute('/')({
   component: Index,
 })
 
+function /*component*/ FeatureCard({children}: {children: ReactNode[]}) {
+  if (children.length != 2) {
+    throw "Feature card must have 2 children"
+  }
+
+  return (
+    <div className="flex flex-row gap-6 items-start bg-bg-alt p-4 rounded-medium max-w-xl">
+      <Check className="w-6 h-6 mt-2 flex-shrink-0"/>
+      <div className="flex flex-col gap-1">
+        <p className="text-4">{children[0]}</p>
+        <p className="text-hinted-gray-9 text-6">
+          {children[1]}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function /*component*/ Noop({children}: {children?: ReactNode | undefined}) {
+  return <>{children}</>
+}
+
 function Index() {
+  const token = Cookies.get("twitch");
+  const connected = !!token;
+
   return (
     <>
-      <div className="w-full pt-48">
-        <div className="container mx-auto">
-          <div className="flex flex-col text-center py-10 gap-8 items-center">
+      <div className="w-full pt-8 flex justify-center">
+        <div className="w-full container">
+          <div className="flex flex-col text-center py-8 gap-8 items-center">
             <h1>Shared Chat Mod Helper</h1>
             <h4 className="italic text-hinted-gray-9">
               A moderator's best friend for Shared Chat.
             </h4>
-            <Button h6sb asChild icon={<Twitch/>}>
-              <a href={AUTH_URL} className="text-inherit hover:text-inherit">Login with Twitch</a>
-            </Button>
+            <SimpleButton h6sb asChild className={"cursor-pointer text-inherit hover:text-inherit hover:decoration-none"}>
+              {
+                !connected ?
+                  <a href={AUTH_URL}>
+                    <div className={"px-2 min-h-8 flex flex-row justify-between"}>
+                      <h6 className={"font-semibold"}>Login with Twitch</h6>
+                      <div className={"pl-4 flex"}>
+                        <div className={"h-8 w-8 m-auto justify-center items-center inline-flex"}>
+                          <Twitch/>
+                        </div>
+                      </div>
+                    </div>
+                  </a> :
+                  <Link href={"/app"} className="text-inherit hover:text-inherit">
+                    <div className={"px-2 min-h-8 flex flex-row justify-between"}>
+                      <h6 className={"font-semibold"}>Access app</h6>
+                      <div className={"pl-4 flex"}>
+                        <div className={"h-8 w-8 m-auto justify-center items-center inline-flex"}>
+                          <IconGavel/>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+              }
+            </SimpleButton>
           </div>
 
-          <div className="flex flex-row gap-24 py-36 items-center">
-            <div className="flex flex-row gap-6 items-start">
-              <Check className="w-6 h-6 mt-2 flex-shrink-0"/>
-              <div className="flex flex-col gap-1">
-                <p className="text-4">Context-driven</p>
-                <p className="text-hinted-gray-9 text-6">
-                  Our interface includes user details, their chat messages, and more!
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-row gap-6 items-start">
-              <Check className="w-6 h-6 mt-2 flex-shrink-0"/>
-              <div className="flex flex-col gap-1">
-                <p className="text-4">Feature-rich</p>
-                <p className="text-hinted-gray-9 text-6">
-                  Beyond bans, timeouts, and warnings, you can even poll your chat's opinion.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-row gap-6 items-start">
-              <Check className="w-6 h-6 mt-2 flex-shrink-0"/>
-              <div className="flex flex-col gap-1">
-                <p className="text-4">Streamer Mode</p>
-                <p className="text-hinted-gray-9 text-6">
-                  Hide profile pictures and mod identities so it's safer to stream our tool!
-                </p>
-              </div>
-            </div>
+          <div className="flex flex-row gap-8 py-20 items-center w-full justify-center">
+            <FeatureCard>
+              <Noop>Context-driven</Noop>
+              <Noop>Our interface includes user details, their chat messages, and more!</Noop>
+            </FeatureCard>
+            <FeatureCard>
+              <Noop>Feature-rich</Noop>
+              <Noop>Beyond bans, timeouts, and warnings, you can even poll your chat's opinion.</Noop>
+            </FeatureCard>
+            <FeatureCard>
+              <Noop>Streamer Mode</Noop>
+              <Noop>Hide profile pictures and mod identities so it's safer to stream our tool!</Noop>
+            </FeatureCard>
           </div>
 
-          <div className="flex justify-center items-start mb-16">
+          <div className="flex justify-center items-start mb-8">
             <Accordion type="single" collapsible className="w-1/2">
               <AccordionItem value="item-1">
                 <AccordionTrigger className="text-hinted-gray-12">

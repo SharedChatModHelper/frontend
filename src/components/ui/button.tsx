@@ -11,8 +11,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-bg-hover",
+        brand: "bg-twitch-purple hover:bg-twitch-purple-8 hover:border-transparent",
         destructive:
-          "bg-red-900 text-neutral-50 hover:bg-red-900/90",
+          "bg-brand-accent-ruby hover:bg-brand-accent-ruby/80 hover:border-transparent",
         outline:
           "border border-neutral-800 bg-neutral-950 hover:bg-neutral-800 hover:text-neutral-50",
         secondary:
@@ -40,7 +41,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   h6sb?: boolean //h6 semibold
 }
 
-const _Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+const SimpleButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     return (
@@ -57,9 +58,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, icon, h6sb, asChild = false, ...props }, ref) => {
     const children = props.children
 
-
     return (
-      <_Button className={className} variant={variant} size={size} asChild={asChild} {...props} ref={ref}>
+      <SimpleButton className={className} variant={variant} size={size} asChild={asChild} {...props} ref={ref}>
         <div className={"px-2 min-h-8 flex flex-row justify-between"}>
           {h6sb ? <h6 className={"font-semibold"}>{children}</h6> : children}
           {icon ?
@@ -71,11 +71,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             : null
           }
         </div>
-      </_Button>
+      </SimpleButton>
     )
   }
 )
 
 Button.displayName = "Button"
 
-export { Button, buttonVariants }
+export { Button, SimpleButton, buttonVariants }

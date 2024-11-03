@@ -202,7 +202,7 @@ function /*component*/ Channel() {
   });
 
   return (
-    <>
+    <div className={"bg-bg-body"}>
       <div className={"min-h-14 bg-bg-alt flex items-center pl-6 pr-4"}>
         <Link href={"/app"} className={"text-white hover:text-twitch-purple-11 transition-colors"}><ArrowLeft12Regular className={"mr-4 size-[1.6rem]"}/></Link>
         <p className={"font-semibold uppercase mr-auto"}>Shared chat mod helper</p>
@@ -265,7 +265,7 @@ function /*component*/ Channel() {
         </ResizablePanelGroup>
       </div>
       <Toaster/>
-    </>
+    </div>
   );
 }
 
@@ -630,7 +630,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button type="button" onClick={async () => {
+                <Button variant="brand" onClick={async () => {
                   const reason = document.getElementById("warnreason") as HTMLInputElement
                   try {
                     const resp = await warn.mutateAsync({user_id: moderation.userId, reason: reason.value})
