@@ -452,9 +452,9 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
         </div>
         <div className={"flex flex-col basis-full"}>
           <p>Reason</p>
-          <TooltipProvider>
+          <TooltipProvider delayDuration={100}>
             <Tooltip>
-              <TooltipTrigger asChild>
+            <TooltipTrigger asChild>
                 <p className={cn(
                   "font-semibold overflow-hidden line-clamp-1 w-fit data-[state=delayed-open]:cursor-default",
                   {"text-hinted-gray-7": moderation.reason.length == 0}
