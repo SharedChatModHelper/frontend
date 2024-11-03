@@ -54,14 +54,14 @@ const _Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 )
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, icon, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, icon, h6sb, asChild = false, ...props }, ref) => {
     const children = props.children
 
 
     return (
       <_Button className={className} variant={variant} size={size} asChild={asChild} {...props} ref={ref}>
         <div className={"px-2 min-h-8 flex flex-row justify-between"}>
-          <h6 className={"font-semibold"}>{children}</h6>
+          {h6sb ? <h6 className={"font-semibold"}>{children}</h6> : children}
           {icon ?
             <div className={"pl-4 flex"}>
               <div className={"h-8 w-8 m-auto justify-center items-center inline-flex"}>
