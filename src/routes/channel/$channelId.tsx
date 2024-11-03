@@ -1,6 +1,6 @@
 import {createFileRoute, Link, redirect, useLoaderData,} from '@tanstack/react-router'
 import Cookies from 'js-cookie'
-import {useCallback, useEffect, useMemo, useState} from 'react'
+import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState} from 'react'
 import {ResizableHandle, ResizablePanel, ResizablePanelGroup,} from '@/components/ui/resizable.tsx'
 import {CLIENT_ID, TIME_AGO} from "@/lib/constants.ts";
 import {
@@ -48,7 +48,7 @@ import {
   Prohibited12Regular
 } from "@fluentui/react-icons";
 import {queryClient} from "@/main.tsx";
-import {IconCommentOff, IconGavel} from "@/components/Icons.tsx";
+import {IconChatMultiple, IconCommentOff, IconGavel} from "@/components/Icons.tsx";
 import {Switch} from "@/components/ui/switch.tsx";
 import {
   Tooltip,
@@ -105,6 +105,8 @@ type PollInput = {
   duration?: number
   channelPoints?: number
 }
+
+type State<S> = [S, Dispatch<SetStateAction<S>>];
 //endregion
 
 export const Route = createFileRoute('/channel/$channelId')({
@@ -116,7 +118,7 @@ export const Route = createFileRoute('/channel/$channelId')({
     const token = Cookies.get('twitch')!
 
     return await queryClient.fetchQuery({
-      queryKey: [`histories`, channelId],
+      queryKey: [`moderations`, channelId],
       queryFn: () => fetch(
         `https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}`,
         {
@@ -137,7 +139,8 @@ function picture(pictures: UserDataIndex | undefined, id: number) {
 
 function /*component*/ Channel() {
   const [moderations, setModerations]: [Moderation[], (value: Moderation[]) => void] = useState(useLoaderData({from: '/channel/$channelId'}).slice(0, 100));
-  const [chatter, setChatter] = useState(moderations[0]?.userId as number | null);
+  const chatterState: State<number | null> = useState(moderations[0]?.userId as number | null);
+  const [chatter, setChatter] = chatterState;
   const [streamerMode, setStreamerMode] = useState(false);
 
   const token = useMemo(() => Cookies.get('twitch'), []);
@@ -213,43 +216,12 @@ function /*component*/ Channel() {
       </div>
       <div className={"h-[calc(100vh-3.5rem)]"}>
         <ResizablePanelGroup direction="horizontal" className={'h-full flex'}>
-          <ResizablePanel defaultSize={20} minSize={moderations[0] ? 13 : 30} className={"h-full flex flex-col"}>
-            <div className={"min-h-14 flex items-center pl-8 pr-4"}>
-              {
-                moderations[0] ?
-                  `Channel: ${moderations[0].channelLogin} • ${moderations.length}+ actions`
-                  : "Users that are moderated by other Shared Chat channels will appear here."
-              }
-            </div>
-            <Separator/>
-            <ScrollArea className={"h-full"}>
-              <div className={'flex flex-col gap-2 py-4 px-4'}>
-                {moderations.map((moderation) => (
-                  <button
-                    className={cn(
-                      "p-4 w-full text-start transition-colors bg-bg-alt hover:bg-bg-hover rounded-medium flex flex-row",
-                      {"bg-bg-hover": chatter === moderation.userId}
-                    )}
-                    key={moderation.userId}
-                    onMouseDown={() => setChatter(moderation.userId)}
-                  >
-                    <div className={"w-8 mr-4 rounded-rounded flex-shrink-0"}>
-                      <img alt={moderation.userName} className={cn("rounded-rounded", {"blur": streamerMode})}
-                           src={picture(data, moderation.userId)}/>
-                    </div>
-                    <div className={"min-w-0"}>
-                      <div className={"text-5 leading-heading font-semibold"}>
-                        {moderation.userName}
-                      </div>
-                      <div className={"w-full text-nowrap overflow-ellipsis overflow-hidden"}>
-                        <span className={"text-hinted-gray-9"}>{TIME_AGO.format(moderation.timestamp * 1000)}</span>
-                        <MessageFragment moderation={moderation}/>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </ScrollArea>
+          <ResizablePanel defaultSize={20} minSize={13} className={"h-full flex flex-col"}>
+            {
+              moderations.length > 0 ?
+                <UserSidebar moderations={moderations} chatterState={chatterState} streamerMode={streamerMode} data={data}/> :
+                <EmptySidebar/>
+            }
           </ResizablePanel>
           <ResizableHandle className={"bg-bg-hover"}/>
           <ResizablePanel minSize={35} className={""}>
@@ -258,11 +230,9 @@ function /*component*/ Channel() {
                              deleteFn={() => removeModeration(moderationMap[chatter])}
                              moderation={getModeration(chatter)}/>
             ) : (
-              <div className={"h-full"}>
-                <div className={"w-full h-full relative my-auto flex flex-col items-center justify-center text-hinted-gray-9"}>
-                  <span className={"size-12"}><IconGavel/></span>
-                  <p className={"pt-2 text-5"}>No pending actions found</p>
-                </div>
+              <div className={"w-full h-full relative my-auto flex flex-col items-center justify-center text-hinted-gray-9"}>
+                <span className={"size-12"}><IconGavel/></span>
+                <p className={"pt-2 text-5"}>No pending actions found</p>
               </div>
             )}
           </ResizablePanel>
@@ -270,6 +240,60 @@ function /*component*/ Channel() {
       </div>
       <Toaster/>
     </div>
+  );
+}
+
+function /*component*/ EmptySidebar() {
+  return (
+    <div className={"w-full h-full relative my-auto flex flex-col items-center justify-center text-hinted-gray-9"}>
+      <span className={"size-12"}><IconChatMultiple/></span>
+      <p className={"pt-2 text-5 max-w-[80%] text-center"}>Users that were timed-out/banned during a Shared Chat session will appear here</p>
+    </div>
+  )
+}
+
+function /*component*/ UserSidebar({moderations, chatterState, streamerMode, data}: {
+  moderations: Moderation[],
+  chatterState: State<number | null>,
+  streamerMode: boolean,
+  data: UserDataIndex | undefined
+}) {
+  const [chatter, setChatter] = chatterState;
+  return (
+    <>
+      <div className={"min-h-14 flex items-center pl-8 pr-4"}>
+        {moderations[0] ? `Channel: ${moderations[0].channelLogin} • ${moderations.length}+ actions` : "No shared mod actions found!"}
+      </div>
+      <Separator/>
+      <ScrollArea className={"h-full"}>
+        <div className={'flex flex-col gap-2 py-4 px-4'}>
+          {moderations.map((moderation) => (
+            <button
+              className={cn(
+                "p-4 w-full text-start transition-colors bg-bg-alt hover:bg-bg-hover rounded-medium flex flex-row",
+                {"bg-bg-hover": chatter === moderation.userId}
+              )}
+              key={moderation.userId}
+              onMouseDown={() => setChatter(moderation.userId)}
+            >
+              <div className={"w-8 mr-4 rounded-rounded flex-shrink-0"}>
+                <img alt={moderation.userName} className={cn("rounded-rounded", {"blur": streamerMode})}
+                     src={picture(data, moderation.userId)}/>
+              </div>
+              <div className={"min-w-0"}>
+                <div className={"text-5 leading-heading font-semibold"}>
+                  {moderation.userName}
+                </div>
+                <div className={"w-full text-nowrap overflow-ellipsis overflow-hidden"}>
+                  <span className={"text-hinted-gray-9"}>{TIME_AGO.format(moderation.timestamp * 1000)}</span>
+                  <MessageFragment moderation={moderation}/>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </ScrollArea>
+    </>
   );
 }
 
@@ -454,7 +478,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
             {moderation.duration != -1 ? localizedDuration(moderation.duration) : "Infinite"}
           </p>
         </div>
-        <div className={"flex flex-col"} style={{flexBasis: "175%"}}>
+        <div className={"flex flex-col basis-full"}>
           <p>Reason</p>
           <TooltipProvider delayDuration={100}>
             <Tooltip>
