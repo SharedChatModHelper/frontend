@@ -681,7 +681,8 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{isBroadcaster ? "Poll your chat" : "Must be the broadcaster"}</p>
+                <p className={"font-semibold"}>{isBroadcaster ? "Poll your chat" : "Must be the broadcaster"}</p>
+                <TooltipArrow className={"fill-white"}/>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
