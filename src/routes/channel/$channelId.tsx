@@ -450,7 +450,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
             {moderation.duration != -1 ? localizedDuration(moderation.duration) : "Infinite"}
           </p>
         </div>
-        <div className={"flex flex-col basis-full"}>
+        <div className={"flex flex-col"} style={{"flex-basis": "175%"}}>
           <p>Reason</p>
           <TooltipProvider delayDuration={100}>
             <Tooltip>
