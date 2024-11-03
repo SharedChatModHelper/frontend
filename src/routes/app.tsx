@@ -39,7 +39,7 @@ function /*component*/ Card({channel}: { channel: Channel }) {
     <Link
       key={channel.channel_id}
       href={`/channel/${channel.channel_id}`}
-      className={"mx-2 my-2 border-bg-alt border-solid border-2 rounded-large bg-bg-hover p-6 text-white hover:text-white cursor-pointer hover:scale-[1.02] transition-transform shadow w-[25rem] max-w-[35rem] flex-grow"}
+      className={"mx-2 my-2 border-bg-alt border-solid border-2 rounded-large bg-bg-hover p-6 text-white hover:text-white cursor-pointer hover:scale-[1.02] transition-transform shadow w-[25rem] max-w-[35rem] flex-grow hover:decoration-none"}
     >
       <div className={"flex flex-col items-center"}>
         <div className={"pb-6 pt-2"}>
