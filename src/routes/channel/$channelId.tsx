@@ -274,7 +274,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
   moderation: Moderation,
   deleteFn: () => void
 }) {
-  const exists = data?.[moderation.userId] != undefined;
+  const exists = data?.[moderation.userId] != undefined || loading;
   const {toast} = useToast();
   const {channelId} = Route.useParams();
   const token = Cookies.get('twitch');
