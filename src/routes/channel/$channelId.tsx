@@ -411,7 +411,10 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
         <div className={"px-4"}>
           <div className={"flex flex-row gap-2"}>
             <h5 className={"font-semibold"}>{moderation.userName}</h5>
-            <a title={"Open viewer card"} href={`https://www.twitch.tv/popout/${moderation.channelLogin}/viewercard/${moderation.userName}`} target={"_blank"}>
+            <a title={"Open viewer card"} href={`https://www.twitch.tv/popout/${moderation.channelLogin}/viewercard/${moderation.userName}`} target={"_blank"} onClick={event => {
+              window.open(`https://www.twitch.tv/popout/${moderation.channelLogin}/viewercard/${moderation.userName}`, moderation.userName, 'width=600,height=300')
+              event.preventDefault();
+            }}>
               <Open12Regular className={"size-8 text-white opacity-75 hover:opacity-100 transition-opacity"}/>
             </a>
           </div>
