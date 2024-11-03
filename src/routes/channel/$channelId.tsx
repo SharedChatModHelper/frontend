@@ -430,7 +430,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
       </div>
       <div className={"text-hinted-gray-9 flex flex-row flex-nowrap pt-4 w-full"}>
         <div className={"flex flex-col basis-full"}>
-          <p>Source Channel</p>
+          <p>Source channel</p>
           <p className={"font-semibold"}>{moderation.sourceLogin}</p>
         </div>
         <div className={"flex flex-col basis-full"}>
