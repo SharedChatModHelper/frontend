@@ -48,7 +48,7 @@ import {
   Prohibited12Regular
 } from "@fluentui/react-icons";
 import {queryClient} from "@/main.tsx";
-import {IconCommentOff} from "@/components/Icons.tsx";
+import {IconCommentOff, IconGavel} from "@/components/Icons.tsx";
 import {Switch} from "@/components/ui/switch.tsx";
 import {
   Tooltip,
@@ -135,7 +135,7 @@ function picture(pictures: UserDataIndex | undefined, id: number) {
 }
 
 function /*component*/ Channel() {
-  const token = Cookies.get('twitch'); //TODO: use context instead
+  const token = Cookies.get('twitch');
   const [moderations, setModerations]: [Moderation[], (value: Moderation[]) => void] = useState(useLoaderData({from: '/channel/$channelId'}).slice(0, 100));
   const [chatter, setChatter] = useState(moderations[0]?.userId as number | null);
   const [streamerMode, setStreamerMode] = useState(false);
@@ -252,7 +252,12 @@ function /*component*/ Channel() {
                              deleteFn={() => removeModeration(moderationMap[chatter])}
                              moderation={getModeration(chatter)}/>
             ) : (
-              <>TODO: No moderations action</>
+              <div className={"h-full"}>
+                <div className={"w-full h-full relative my-auto flex flex-col items-center justify-center text-hinted-gray-9"}>
+                  <span className={"size-[3rem]"}><IconGavel/></span>
+                  <p className={"pt-2 text-5"}>No pending actions found</p>
+                </div>
+              </div>
             )}
           </ResizablePanel>
         </ResizablePanelGroup>
