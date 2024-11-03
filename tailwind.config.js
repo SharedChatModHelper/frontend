@@ -104,7 +104,7 @@ export default {
         warn: "#ffd37a",
         success: "#00f593",
         info: "#1f69ff",
-        accent: "#9147ff",
+        accent: "#a970ff",
         "hinted-gray": {
           1: "#0e0e10",
           2: "#18181b",
@@ -123,7 +123,7 @@ export default {
           15: "#f7f7f8",
         },
         "twitch-purple": {
-          DEFAULT: "#9147ff",
+          DEFAULT: "#a970ff",
           1: "#040109",
           2: "#0d031c",
           3: "#15052e",

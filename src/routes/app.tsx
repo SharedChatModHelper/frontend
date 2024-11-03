@@ -1,11 +1,11 @@
 import {createFileRoute, Link, redirect, useLoaderData} from '@tanstack/react-router'
 import Cookies from "js-cookie";
 import {queryClient} from "@/main.tsx";
-import {Checkbox} from "@/components/ui/checkbox.tsx";
 import {Label} from "@/components/ui/label.tsx";
 import {useState} from "react";
 import {CheckedState} from "@radix-ui/react-checkbox";
 import {BOT_ID, CLIENT_ID} from "@/lib/constants.ts";
+import {Switch} from "@/components/ui/switch.tsx";
 
 export const Route = createFileRoute('/app')({
   beforeLoad: () => {
@@ -55,7 +55,7 @@ function /*component*/ App() {
   const channels = useLoaderData({from: '/app'});
   const token = Cookies.get('twitch');
   const selfId = Cookies.get('self');
-  const [modded, setModded] = useState("indeterminate" as CheckedState)
+  const [modded, setModded] = useState(false)
   const [moddedReady, setModdedReady] = useState(false)
 
   const moddedUrl = `https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${selfId}&user_id=${BOT_ID}`
@@ -104,7 +104,7 @@ function /*component*/ App() {
         }
       </div>
       <div className={"flex items-center space-x-2"}>
-        <Checkbox id="modded" checked={modded} onCheckedChange={handleModChecked} disabled={!moddedReady} />
+        <Switch id="modded" checked={modded} onCheckedChange={handleModChecked} disabled={!moddedReady} />
         <Label htmlFor="modded">Allow bot to operate in my chat</Label>
       </div>
     </div>

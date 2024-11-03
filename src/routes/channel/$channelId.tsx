@@ -32,7 +32,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {Button} from "@/components/ui/button.tsx";
-import {Checkbox} from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogClose,
@@ -42,8 +41,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import {Input} from "@/components/ui/input"
+import {Label} from "@/components/ui/label"
 import {Separator} from "@/components/ui/separator.tsx";
 import {Toaster} from "@/components/ui/toaster.tsx";
 import {useToast} from "@/hooks/use-toast"
@@ -55,6 +54,15 @@ import {
   Prohibited12Regular
 } from "@fluentui/react-icons";
 import {queryClient} from "@/main.tsx";
+import {IconCommentOff} from "@/components/Icons.tsx";
+import {Switch} from "@/components/ui/switch.tsx";
+import {
+  Tooltip,
+  TooltipArrow,
+  TooltipContent,
+  TooltipPortal, TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip.tsx";
 
 //region Types
 type Moderation = {
@@ -203,13 +211,13 @@ function /*component*/ Channel() {
         <Link href={"/app"} className={"text-white hover:text-twitch-purple-11 transition-colors"}><ArrowLeft12Regular className={"mr-4 size-[1.6rem]"}/></Link>
         <p className={"font-semibold uppercase mr-auto"}>Shared chat mod helper</p>
         <div className={"flex items-center space-x-2"}>
-          <Checkbox id="streamer" checked={streamerMode} onCheckedChange={(checked) => setStreamerMode(!!checked)} />
+          <Switch id="streamer" checked={streamerMode} onCheckedChange={(checked) => setStreamerMode(checked)} />
           <Label htmlFor="streamer">Streamer Mode</Label>
         </div>
       </div>
       <div>
         <ResizablePanelGroup direction="horizontal" className={'min-h-[calc(100vh-3.5rem)]'}>
-          <ResizablePanel defaultSize={20} className={""}>
+          <ResizablePanel defaultSize={20} minSize={13} className={""}>
             <div className={"min-h-14 flex items-center pl-8 pr-4"}>
               {moderations[0] ? `Channel: ${moderations[0].channelLogin} • ${moderations.length}+ actions` : "No shared mod actions found!"}
             </div>
@@ -226,9 +234,7 @@ function /*component*/ Channel() {
                     onMouseDown={() => setChatter(moderation.userId)}
                   >
                     <div className={"w-8 mr-4 rounded-rounded flex-shrink-0"}>
-                      {
-                        <img alt={`${moderation.userName}'s profile image`} className={`rounded-rounded ${streamerMode ? "blur" : ""}`} src={picture(data, moderation.userId)}/>
-                      }
+                      <img alt={moderation.userName} className={cn("rounded-rounded", {"blur": streamerMode})} src={picture(data, moderation.userId)}/>
                     </div>
                     <div className={"min-w-0"}>
                       <div className={"text-5 leading-heading font-semibold"}>
@@ -245,7 +251,7 @@ function /*component*/ Channel() {
             </ul>
           </ResizablePanel>
           <ResizableHandle className={"bg-bg-hover"}/>
-          <ResizablePanel className={""}>
+          <ResizablePanel minSize={35} className={""}>
             {chatter != null ? (
               <MessageWindow data={data} loading={isLoading} streamerMode={streamerMode} deleteFn={() => removeModeration(moderationMap[chatter])} moderation={getModeration(chatter)}/>
             ) : (
@@ -254,15 +260,15 @@ function /*component*/ Channel() {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
-      <Toaster />
+      <Toaster/>
     </>
   );
 }
 
 function /*component*/ MessageWindow({data, loading, streamerMode, moderation, deleteFn}: { data: UserDataIndex | undefined, loading: boolean, streamerMode: boolean, moderation: Moderation, deleteFn: () => void }) {
   const exists = data?.[moderation.userId] != undefined;
-  const { toast } = useToast();
-  const { channelId } = Route.useParams();
+  const {toast} = useToast();
+  const {channelId} = Route.useParams();
   const token = Cookies.get('twitch');
   const selfId = Cookies.get('self');
 
@@ -498,20 +504,39 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
           </div>
           <div className={"flex flex-col basis-full"}>
             <p>Reason</p>
-            <p className={cn(
-              "font-semibold",
-              {
-                "text-hinted-gray-7": moderation.reason.length == 0
-              }
-            )}>
-              {moderation.reason ? moderation.reason : "Unspecified"}
-            </p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className={cn(
+                    "font-semibold overflow-hidden line-clamp-1 w-fit data-[state=delayed-open]:cursor-default",
+                    {"text-hinted-gray-7": moderation.reason.length == 0}
+                  )}>
+                    {moderation.reason ? moderation.reason : "Unspecified"}
+                  </p>
+                </TooltipTrigger>
+                <TooltipPortal>
+                  <TooltipContent>
+                    <div className={"max-w-5xl leading-[1.2] text-6"}>
+                      {moderation.reason ? moderation.reason : "Unspecified"}
+                    </div>
+                    <TooltipArrow className="fill-white"/>
+                  </TooltipContent>
+                </TooltipPortal>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
         <Separator className={"my-4"}/>
 
-        <div className={"mb-auto"}>
-          Messages will go here
+        <div className={"h-full mb-4"}>
+          {
+            moderation.messages.length > 0 ?
+              moderation.messages.map(message => <Message chatter={moderation.userName} message={message}/>)
+              : <div className={"w-full h-full relative my-auto flex flex-col items-center justify-center text-hinted-gray-9"}>
+                <span className={"size-[3rem]"}><IconCommentOff/></span>
+                <p className={"pt-2 text-5"}>No recent messages</p>
+              </div>
+          }
         </div>
 
         <div className={"min-h-24 bg-bg-alt p-4 rounded-t-extra-extra-large flex flex-row gap-20 justify-center items-center"}>
@@ -530,7 +555,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={async () => {
                   try {
-                    const resp = await dismiss.mutateAsync({ userId: moderation.userId })
+                    const resp = await dismiss.mutateAsync({userId: moderation.userId})
                     if (resp.ok) {
                       toast({
                         description: `Dismissed logs of ${moderation.userName}`
@@ -636,11 +661,15 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
   );
 }
 
-function /*component*/ Message() {
+function /*component*/ Message({chatter, message}: { chatter: string, message: Message }) {
   return (
-    <>
-
-    </>
+    <div className={"py-2 word-break"}>
+      <span className={"text-hinted-gray-9 mr-2"}>{localizedTime(message.timestamp)}</span>
+      <span className={"font-bold"}>{chatter}</span>
+      <span>:&nbsp;</span>
+      <span>{message.text}</span>
+      <span className={"ml-2 text-hinted-gray-9"}>(Sent in {message.sourceLogin})</span>
+    </div>
   );
 }
 

@@ -95,6 +95,25 @@ h6 {
   animation-timing-function: linear;
 }
 
+.word-break {
+  word-wrap: break-word;
+}
+
+.checkbox-check[data-state=checked]::before {
+  box-sizing: content-box;
+  border-width: 0 0 2px 2px;
+  border-style: solid;
+  border-color: theme("colors.accent");
+  display: block;
+  position: absolute;
+  top: calc(50% - 1px);
+  left: 0.8rem;
+  width: 0.7rem;
+  height: 0.3rem;
+  transform: translate3d(-50%, -50%, 0px) rotate(-45deg);
+  content: "";
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
