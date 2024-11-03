@@ -213,9 +213,13 @@ function /*component*/ Channel() {
       </div>
       <div className={"h-[calc(100vh-3.5rem)]"}>
         <ResizablePanelGroup direction="horizontal" className={'h-full flex'}>
-          <ResizablePanel defaultSize={20} minSize={13} className={"h-full flex flex-col"}>
+          <ResizablePanel defaultSize={20} minSize={moderations[0] ? 13 : 30} className={"h-full flex flex-col"}>
             <div className={"min-h-14 flex items-center pl-8 pr-4"}>
-              {moderations[0] ? `Channel: ${moderations[0].channelLogin} • ${moderations.length}+ actions` : "No shared mod actions found!"}
+              {
+                moderations[0] ?
+                  `Channel: ${moderations[0].channelLogin} • ${moderations.length}+ actions`
+                  : "Users that are moderated by other Shared Chat channels will appear here."
+              }
             </div>
             <Separator/>
             <ScrollArea className={"h-full"}>
@@ -450,7 +454,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
             {moderation.duration != -1 ? localizedDuration(moderation.duration) : "Infinite"}
           </p>
         </div>
-        <div className={"flex flex-col"} style={{"flex-basis": "175%"}}>
+        <div className={"flex flex-col"} style={{flexBasis: "175%"}}>
           <p>Reason</p>
           <TooltipProvider delayDuration={100}>
             <Tooltip>
