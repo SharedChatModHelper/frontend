@@ -10,6 +10,7 @@
   }
 
   html {
+    /*noinspection CssNoGenericFontName*/
     font-family: theme("fontFamily.base");
   }
 }
@@ -114,6 +115,14 @@ h6 {
   content: "";
 }
 
+.scrollbar[data-state="visible"] {
+  animation: fadeIn 200ms ease-out
+}
+
+.scrollbar[data-state="hidden"] {
+  animation: fadeOut 200ms ease-out
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -126,6 +135,24 @@ h6 {
 
   button {
     background-color: #f9f9f9;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 

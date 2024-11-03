@@ -1,15 +1,7 @@
-import {
-  createFileRoute, Link,
-  redirect,
-  useLoaderData,
-} from '@tanstack/react-router'
+import {createFileRoute, Link, redirect, useLoaderData,} from '@tanstack/react-router'
 import Cookies from 'js-cookie'
 import {useCallback, useEffect, useMemo, useState} from 'react'
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable.tsx'
+import {ResizableHandle, ResizablePanel, ResizablePanelGroup,} from '@/components/ui/resizable.tsx'
 import {CLIENT_ID, TIME_AGO} from "@/lib/constants.ts";
 import {
   cn,
@@ -36,7 +28,8 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription, DialogFooter,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -51,6 +44,7 @@ import {
   Clock12Regular,
   Comment12Regular,
   Dismiss12Regular,
+  Open12Regular,
   Prohibited12Regular
 } from "@fluentui/react-icons";
 import {queryClient} from "@/main.tsx";
@@ -60,9 +54,11 @@ import {
   Tooltip,
   TooltipArrow,
   TooltipContent,
-  TooltipPortal, TooltipProvider,
+  TooltipPortal,
+  TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip.tsx";
+import {ScrollArea} from "@/components/ui/scroll-area.tsx";
 
 //region Types
 type Moderation = {
@@ -118,7 +114,7 @@ export const Route = createFileRoute('/channel/$channelId')({
     const {channelId} = ctx.params
     const token = Cookies.get('twitch')!
 
-    const response = await queryClient.fetchQuery({
+    return await queryClient.fetchQuery({
       queryKey: [`histories`, channelId],
       queryFn: () => fetch(
         `https://shared-chat-mod-helper.gitprodigy.workers.dev/?channel=${channelId}`,
@@ -130,8 +126,6 @@ export const Route = createFileRoute('/channel/$channelId')({
       ).then(value => value.json()),
 
     })
-
-    return response
   },
   component: Channel,
 })
@@ -215,16 +209,16 @@ function /*component*/ Channel() {
           <Label htmlFor="streamer">Streamer Mode</Label>
         </div>
       </div>
-      <div>
-        <ResizablePanelGroup direction="horizontal" className={'min-h-[calc(100vh-3.5rem)]'}>
-          <ResizablePanel defaultSize={20} minSize={13} className={""}>
+      <div className={"h-[calc(100vh-3.5rem)]"}>
+        <ResizablePanelGroup direction="horizontal" className={'h-full flex'}>
+          <ResizablePanel defaultSize={20} minSize={13} className={"h-full flex flex-col"}>
             <div className={"min-h-14 flex items-center pl-8 pr-4"}>
               {moderations[0] ? `Channel: ${moderations[0].channelLogin} • ${moderations.length}+ actions` : "No shared mod actions found!"}
             </div>
             <Separator/>
-            <ul className={'flex flex-col gap-2 py-4 px-4'}>
-              {moderations.map((moderation) => (
-                <li>
+            <ScrollArea className={"h-full"}>
+              <div className={'flex flex-col gap-2 py-4 px-4'}>
+                {moderations.map((moderation) => (
                   <button
                     className={cn(
                       "p-4 w-full text-start transition-colors bg-bg-alt hover:bg-bg-hover rounded-medium flex flex-row",
@@ -234,7 +228,8 @@ function /*component*/ Channel() {
                     onMouseDown={() => setChatter(moderation.userId)}
                   >
                     <div className={"w-8 mr-4 rounded-rounded flex-shrink-0"}>
-                      <img alt={moderation.userName} className={cn("rounded-rounded", {"blur": streamerMode})} src={picture(data, moderation.userId)}/>
+                      <img alt={moderation.userName} className={cn("rounded-rounded", {"blur": streamerMode})}
+                           src={picture(data, moderation.userId)}/>
                     </div>
                     <div className={"min-w-0"}>
                       <div className={"text-5 leading-heading font-semibold"}>
@@ -246,14 +241,16 @@ function /*component*/ Channel() {
                       </div>
                     </div>
                   </button>
-                </li>
-              ))}
-            </ul>
+                ))}
+              </div>
+            </ScrollArea>
           </ResizablePanel>
           <ResizableHandle className={"bg-bg-hover"}/>
           <ResizablePanel minSize={35} className={""}>
             {chatter != null ? (
-              <MessageWindow data={data} loading={isLoading} streamerMode={streamerMode} deleteFn={() => removeModeration(moderationMap[chatter])} moderation={getModeration(chatter)}/>
+              <MessageWindow data={data} loading={isLoading} streamerMode={streamerMode}
+                             deleteFn={() => removeModeration(moderationMap[chatter])}
+                             moderation={getModeration(chatter)}/>
             ) : (
               <>TODO: No moderations action</>
             )}
@@ -265,7 +262,13 @@ function /*component*/ Channel() {
   );
 }
 
-function /*component*/ MessageWindow({data, loading, streamerMode, moderation, deleteFn}: { data: UserDataIndex | undefined, loading: boolean, streamerMode: boolean, moderation: Moderation, deleteFn: () => void }) {
+function /*component*/ MessageWindow({data, loading, streamerMode, moderation, deleteFn}: {
+  data: UserDataIndex | undefined,
+  loading: boolean,
+  streamerMode: boolean,
+  moderation: Moderation,
+  deleteFn: () => void
+}) {
   const exists = data?.[moderation.userId] != undefined;
   const {toast} = useToast();
   const {channelId} = Route.useParams();
@@ -292,7 +295,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
           "Client-Id": CLIENT_ID,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ data: banData }),
+        body: JSON.stringify({data: banData}),
       })
     }
   });
@@ -311,7 +314,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
         })
 
         try {
-          const resp = await dismiss.mutateAsync({ userId: moderation.userId });
+          const resp = await dismiss.mutateAsync({userId: moderation.userId});
           if (resp.ok) {
             deleteFn()
           } else {
@@ -457,207 +460,205 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
   }
 
   return (
-    <>
-      <div className={"px-8 pt-4 h-full flex flex-col"}>
-        <div className={"flex flex-row"}>
-          <div>
-            <img alt={moderation.userName} className={cn("w-16 rounded-rounded", {"blur": streamerMode})} src={picture(data, moderation.userId)}/>
-          </div>
-          <div className={"px-4"}>
-            <div className={"flex flex-row gap-2"}>
-              <h5 className={"font-semibold"}>{moderation.userName}</h5>
-              <a title={"Open viewer card"} href={`https://www.twitch.tv/popout/${moderation.channelLogin}/viewercard/${moderation.userName}`} target={"_blank"}>
-                <img src={"/open.png"} className={"h-8 opacity-75 hover:opacity-100"} />
-              </a>
-            </div>
-            <p className={cn(
-              {
-                "text-hinted-gray-9": exists,
-                "text-red-10": !exists,
-              }
-            )}>
-              {accountDetails}
-            </p>
-          </div>
+    <div className={"px-8 pt-4 h-full flex flex-col"}>
+      <div className={"flex flex-row"}>
+        <div>
+          <img alt={moderation.userName} className={cn("w-16 rounded-rounded", {"blur": streamerMode})} src={picture(data, moderation.userId)}/>
         </div>
-        <div className={"text-hinted-gray-9 flex flex-row flex-nowrap pt-4 w-full"}>
-          <div className={"flex flex-col basis-full"}>
-            <p>Source Channel</p>
-            <p className={"font-semibold"}>{moderation.sourceLogin}</p>
+        <div className={"px-4"}>
+          <div className={"flex flex-row gap-2"}>
+            <h5 className={"font-semibold"}>{moderation.userName}</h5>
+            <a title={"Open viewer card"} href={`https://www.twitch.tv/popout/${moderation.channelLogin}/viewercard/${moderation.userName}`} target={"_blank"}>
+              <Open12Regular className={"size-8 text-white opacity-75 hover:opacity-100 transition-opacity"}/>
+            </a>
           </div>
-          <div className={"flex flex-col basis-full"}>
-            <p>Moderated by</p>
-            <p className={cn("font-semibold", {"blur": streamerMode})}>{streamerMode ? "hidden_moderator" : moderation.modLogin}</p>
-          </div>
-          <div className={"flex flex-col basis-full"}>
-            <p>Moderated at</p>
-            <p className={"font-semibold"}>
-              {localizedTime(moderation.timestamp * 1000)} • {localizedShortDay(moderation.timestamp * 1000)}
-            </p>
-          </div>
+          <p className={cn(
+            {
+              "text-hinted-gray-9": exists,
+              "text-red-10": !exists,
+            }
+          )}>
+            {accountDetails}
+          </p>
+        </div>
+      </div>
+      <div className={"text-hinted-gray-9 flex flex-row flex-nowrap pt-4 w-full"}>
+        <div className={"flex flex-col basis-full"}>
+          <p>Source Channel</p>
+          <p className={"font-semibold"}>{moderation.sourceLogin}</p>
+        </div>
+        <div className={"flex flex-col basis-full"}>
+          <p>Moderated by</p>
+          <p className={cn("font-semibold", {"blur": streamerMode})}>{streamerMode ? "hidden_moderator" : moderation.modLogin}</p>
+        </div>
+        <div className={"flex flex-col basis-full"}>
+          <p>Moderated at</p>
+          <p className={"font-semibold"}>
+            {localizedTime(moderation.timestamp * 1000)} • {localizedShortDay(moderation.timestamp * 1000)}
+          </p>
+        </div>
 
-          <div className={"flex flex-col basis-full"}>
-            <p>Duration</p>
-            <p className={"font-semibold"}>
-              {moderation.duration != -1 ? localizedDuration(moderation.duration) : "Infinite"}
-            </p>
-          </div>
-          <div className={"flex flex-col basis-full"}>
-            <p>Reason</p>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <p className={cn(
-                    "font-semibold overflow-hidden line-clamp-1 w-fit data-[state=delayed-open]:cursor-default",
-                    {"text-hinted-gray-7": moderation.reason.length == 0}
-                  )}>
+        <div className={"flex flex-col basis-full"}>
+          <p>Duration</p>
+          <p className={"font-semibold"}>
+            {moderation.duration != -1 ? localizedDuration(moderation.duration) : "Infinite"}
+          </p>
+        </div>
+        <div className={"flex flex-col basis-full"}>
+          <p>Reason</p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className={cn(
+                  "font-semibold overflow-hidden line-clamp-1 w-fit data-[state=delayed-open]:cursor-default",
+                  {"text-hinted-gray-7": moderation.reason.length == 0}
+                )}>
+                  {moderation.reason ? moderation.reason : "Unspecified"}
+                </p>
+              </TooltipTrigger>
+              <TooltipPortal>
+                <TooltipContent>
+                  <div className={"max-w-5xl leading-[1.2] text-6"}>
                     {moderation.reason ? moderation.reason : "Unspecified"}
-                  </p>
-                </TooltipTrigger>
-                <TooltipPortal>
-                  <TooltipContent>
-                    <div className={"max-w-5xl leading-[1.2] text-6"}>
-                      {moderation.reason ? moderation.reason : "Unspecified"}
-                    </div>
-                    <TooltipArrow className="fill-white"/>
-                  </TooltipContent>
-                </TooltipPortal>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+                  </div>
+                  <TooltipArrow className="fill-white"/>
+                </TooltipContent>
+              </TooltipPortal>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-        <Separator className={"my-4"}/>
+      </div>
+      <Separator className={"my-4"}/>
 
-        <div className={"h-full mb-4"}>
-          {
-            moderation.messages.length > 0 ?
-              moderation.messages.map(message => <Message chatter={moderation.userName} message={message}/>)
-              : <div className={"w-full h-full relative my-auto flex flex-col items-center justify-center text-hinted-gray-9"}>
-                <span className={"size-[3rem]"}><IconCommentOff/></span>
-                <p className={"pt-2 text-5"}>No recent messages</p>
-              </div>
-          }
-        </div>
+      <ScrollArea type={"auto"} className={"h-full mb-4 pr-4"}>
+        {
+          moderation.messages.length > 0 ?
+            moderation.messages.map(message => <Message chatter={moderation.userName} message={message}/>) :
+            <div className={"w-full h-full relative my-auto flex flex-col items-center justify-center text-hinted-gray-9"}>
+              <span className={"size-[3rem]"}><IconCommentOff/></span>
+              <p className={"pt-2 text-5"}>No recent messages</p>
+            </div>
+        }
+      </ScrollArea>
 
-        <div className={"min-h-24 bg-bg-alt p-4 rounded-t-extra-extra-large flex flex-row gap-20 justify-center items-center"}>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button h6sb icon={<Dismiss12Regular/>}>Dismiss</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently remove the user's chat logs from our server.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={async () => {
-                  try {
-                    const resp = await dismiss.mutateAsync({userId: moderation.userId})
-                    if (resp.ok) {
-                      toast({
-                        description: `Dismissed logs of ${moderation.userName}`
-                      });
-                      deleteFn();
-                    } else {
-                      const body = await resp.json()
-                      toast({
-                        variant: "destructive",
-                        title: "Uh oh! Something went wrong.",
-                        description: `Failed to dismiss logs for ${moderation.userName} due to ${body.error}`
-                      })
-                    }
-                  } catch (e) {
-                    console.error(e)
+      <div className={"min-h-24 bg-bg-alt p-4 rounded-t-extra-extra-large flex flex-row gap-20 justify-center items-center"}>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button h6sb icon={<Dismiss12Regular/>}>Dismiss</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently remove the user's chat logs from our server.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={async () => {
+                try {
+                  const resp = await dismiss.mutateAsync({userId: moderation.userId})
+                  if (resp.ok) {
+                    toast({
+                      description: `Dismissed logs of ${moderation.userName}`
+                    });
+                    deleteFn();
+                  } else {
+                    const body = await resp.json()
                     toast({
                       variant: "destructive",
                       title: "Uh oh! Something went wrong.",
-                      description: `Could not dismiss logs for ${moderation.userName}; try again later`
+                      description: `Failed to dismiss logs for ${moderation.userName} due to ${body.error}`
                     })
-                  } finally {
-                    dismiss.reset()
                   }
+                } catch (e) {
+                  console.error(e)
+                  toast({
+                    variant: "destructive",
+                    title: "Uh oh! Something went wrong.",
+                    description: `Could not dismiss logs for ${moderation.userName}; try again later`
+                  })
+                } finally {
+                  dismiss.reset()
+                }
+              }}>
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button h6sb icon={<Prohibited12Regular/>}>Ban</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Ban Details</DialogTitle>
+              <DialogDescription>
+                Customize the ban reason here. Click execute once done.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="banreason" className="text-right">
+                  Reason
+                </Label>
+                <Input id="banreason" defaultValue="Reinstated shared chat ban" className="col-span-3"/>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" onClick={async () => await banUser(-1, document.getElementById("banreason") as HTMLInputElement)}>
+                  Execute
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button h6sb icon={<Clock12Regular/>}>Timeout</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Timeout Details</DialogTitle>
+              <DialogDescription>
+                Customize the timeout here. Click execute once done.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="timeoutduration" className="text-right">
+                  Seconds
+                </Label>
+                <Input id="timeoutduration" type="number" defaultValue="600" min="1" max="1209600" className="col-span-3"/>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="timeoutreason" className="text-right">
+                  Reason
+                </Label>
+                <Input id="timeoutreason" defaultValue="Reinstated shared chat timeout" className="col-span-3"/>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" onClick={async () => {
+                  const duration = document.getElementById("timeoutduration") as HTMLInputElement
+                  const reason = document.getElementById("timeoutreason") as HTMLInputElement
+                  await banUser(duration.valueAsNumber, reason)
                 }}>
-                  Continue
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  Execute
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button h6sb icon={<Prohibited12Regular/>}>Ban</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Ban Details</DialogTitle>
-                <DialogDescription>
-                  Customize the ban reason here. Click execute once done.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="banreason" className="text-right">
-                    Reason
-                  </Label>
-                  <Input id="banreason" defaultValue="Reinstated shared chat ban" className="col-span-3" />
-                </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" onClick={async () => await banUser(-1, document.getElementById("banreason") as HTMLInputElement)}>
-                    Execute
-                  </Button>
-                </DialogClose>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button h6sb icon={<Clock12Regular/>}>Timeout</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Timeout Details</DialogTitle>
-                <DialogDescription>
-                  Customize the timeout here. Click execute once done.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="timeoutduration" className="text-right">
-                    Seconds
-                  </Label>
-                  <Input id="timeoutduration" type="number" defaultValue="600" min="1" max="1209600" className="col-span-3"/>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="timeoutreason" className="text-right">
-                    Reason
-                  </Label>
-                  <Input id="timeoutreason" defaultValue="Reinstated shared chat timeout" className="col-span-3"/>
-                </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" onClick={async () => {
-                    const duration = document.getElementById("timeoutduration") as HTMLInputElement
-                    const reason = document.getElementById("timeoutreason") as HTMLInputElement
-                    await banUser(duration.valueAsNumber, reason)
-                  }}>
-                    Execute
-                  </Button>
-                </DialogClose>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {pollElement}
-        </div>
+        {pollElement}
       </div>
-    </>
+    </div>
   );
 }
 
