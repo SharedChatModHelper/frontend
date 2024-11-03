@@ -391,86 +391,6 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
     }
   });
 
-  let pollElement
-  if (channelId === selfId) {
-    // must have broadcaster token to start a poll
-    pollElement = <Dialog>
-      <DialogTrigger asChild>
-        <Button h6sb icon={<Comment12Regular/>}>Start Chat Poll</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Poll Details</DialogTitle>
-          <DialogDescription>
-            Customize the poll here. Click execute once done.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="polltitle" className="text-right">
-              Title
-            </Label>
-            <Input id="polltitle" defaultValue="Should we punish this chatter?" className="col-span-3"/>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="pollduration" className="text-right">
-              Seconds
-            </Label>
-            <Input id="pollduration" type="number" defaultValue="60" min="0" max="1800" className="col-span-3"/>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="pollpoints" className="text-right">
-              Channel Points
-            </Label>
-            <Input id="pollpoints" type="number" defaultValue="0" min="0" max="1000000" className="col-span-3"/>
-          </div>
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" onClick={async () => {
-              const titleEl = document.getElementById("polltitle") as HTMLInputElement
-              const secondsEl = document.getElementById("pollduration") as HTMLInputElement
-              const pointsEl = document.getElementById("pollpoints") as HTMLInputElement
-              try {
-                const resp = await poll.mutateAsync({
-                  title: titleEl.value,
-                  duration: secondsEl.valueAsNumber,
-                  channelPoints: pointsEl.valueAsNumber
-                })
-                if (resp.ok) {
-                  toast({
-                    description: `Started poll about ${moderation.userName}`
-                  })
-                  window.open(`https://www.twitch.tv/popout/${moderation.channelLogin}/poll`, "_blank")
-                } else {
-                  const body = await resp.json()
-                  toast({
-                    variant: "destructive",
-                    title: "Uh oh! Something went wrong.",
-                    description: `Failed to start poll about ${moderation.userName}: ${body.message}`
-                  })
-                }
-              } catch (e) {
-                console.error(e)
-                toast({
-                  variant: "destructive",
-                  title: "Uh oh! Something went wrong.",
-                  description: `Could not start poll about ${moderation.userName}; try again later`
-                })
-              } finally {
-                poll.reset()
-              }
-            }}>
-              Execute
-            </Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  } else {
-    pollElement = <></>
-  }
-
   let accountDetails: string;
   if (loading) {
     accountDetails = `Loading information`;
@@ -479,6 +399,8 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
   } else {
     accountDetails = "Account banned or deactivated";
   }
+
+  const isBroadcaster = selfId === channelId
 
   return (
     <div className={"px-8 pt-4 h-full flex flex-col"}>
@@ -745,7 +667,79 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
           </DialogContent>
         </Dialog>
 
-        {pollElement}
+        <Dialog>
+          <DialogTrigger asChild disabled={!isBroadcaster}>
+            <Button h6sb icon={<Comment12Regular/>}>Start Chat Poll</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Poll Details</DialogTitle>
+              <DialogDescription>
+                Customize the poll here. Click execute once done.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="polltitle" className="text-right">
+                  Title
+                </Label>
+                <Input id="polltitle" defaultValue="Should we punish this chatter?" className="col-span-3"/>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="pollduration" className="text-right">
+                  Seconds
+                </Label>
+                <Input id="pollduration" type="number" defaultValue="60" min="0" max="1800" className="col-span-3"/>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="pollpoints" className="text-right">
+                  Channel Points
+                </Label>
+                <Input id="pollpoints" type="number" defaultValue="0" min="0" max="1000000" className="col-span-3"/>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" onClick={async () => {
+                  const titleEl = document.getElementById("polltitle") as HTMLInputElement
+                  const secondsEl = document.getElementById("pollduration") as HTMLInputElement
+                  const pointsEl = document.getElementById("pollpoints") as HTMLInputElement
+                  try {
+                    const resp = await poll.mutateAsync({
+                      title: titleEl.value,
+                      duration: secondsEl.valueAsNumber,
+                      channelPoints: pointsEl.valueAsNumber
+                    })
+                    if (resp.ok) {
+                      toast({
+                        description: `Started poll about ${moderation.userName}`
+                      })
+                      window.open(`https://www.twitch.tv/popout/${moderation.channelLogin}/poll`, "_blank")
+                    } else {
+                      const body = await resp.json()
+                      toast({
+                        variant: "destructive",
+                        title: "Uh oh! Something went wrong.",
+                        description: `Failed to start poll about ${moderation.userName}: ${body.message}`
+                      })
+                    }
+                  } catch (e) {
+                    console.error(e)
+                    toast({
+                      variant: "destructive",
+                      title: "Uh oh! Something went wrong.",
+                      description: `Could not start poll about ${moderation.userName}; try again later`
+                    })
+                  } finally {
+                    poll.reset()
+                  }
+                }}>
+                  Execute
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
