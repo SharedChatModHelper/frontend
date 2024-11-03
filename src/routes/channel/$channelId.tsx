@@ -518,7 +518,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
             <Message chatter={streamerMode ? "[redacted]" : moderation.modLogin} message={
               Object.assign({}, moderation.messages[0], {
                 text: moderation.duration > 0
-                  ? `timed-out ${moderation.userName} for ${moderation.duration} seconds ${moderation.reason ? `with reason: ${moderation.reason}` : ""}`
+                  ? `timed-out ${moderation.userName} for ${localizedDuration(moderation.duration)} ${moderation.reason ? `with reason: ${moderation.reason}` : ""}`
                   : `banned ${moderation.userName} ${moderation.reason ? `with reason: ${moderation.reason}` : ""}`,
                 timestamp: moderation.timestamp
               }) as Message
