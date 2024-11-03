@@ -135,10 +135,11 @@ function picture(pictures: UserDataIndex | undefined, id: number) {
 }
 
 function /*component*/ Channel() {
-  const token = Cookies.get('twitch');
   const [moderations, setModerations]: [Moderation[], (value: Moderation[]) => void] = useState(useLoaderData({from: '/channel/$channelId'}).slice(0, 100));
   const [chatter, setChatter] = useState(moderations[0]?.userId as number | null);
   const [streamerMode, setStreamerMode] = useState(false);
+
+  const token = useMemo(() => Cookies.get('twitch'), []);
 
   const moderationMap = useMemo(() => {
     const moderationMap: { [id: number]: number } = {};
