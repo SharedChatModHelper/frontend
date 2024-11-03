@@ -668,9 +668,21 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
         </Dialog>
 
         <Dialog>
-          <DialogTrigger asChild disabled={!isBroadcaster}>
-            <Button h6sb icon={<Comment12Regular/>}>Start Chat Poll</Button>
-          </DialogTrigger>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span tabIndex={0}>
+                  <DialogTrigger asChild disabled={!isBroadcaster}>
+                    <Button h6sb icon={<Comment12Regular/>}>Start Chat Poll</Button>
+                  </DialogTrigger>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isBroadcaster ? "Poll your chat" : "Must be the broadcaster"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Poll Details</DialogTitle>
