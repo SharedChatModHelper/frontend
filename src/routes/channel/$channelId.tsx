@@ -486,7 +486,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
 
         <div className={"flex flex-col basis-full"}>
           <p>Duration</p>
-          <TooltipProvider>
+          <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <p className={"font-semibold overflow-hidden line-clamp-1 w-fit data-[state=delayed-open]:cursor-default"}>
@@ -495,7 +495,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
               </TooltipTrigger>
               <TooltipPortal>
                 <TooltipContent>
-                  <div className={"max-w-5xl leading-[1.2] text-6"}>
+                  <div className={"font-semibold max-w-5xl leading-[1.2] text-6"}>
                     {moderation.duration > 0 ? `${moderation.duration} seconds` : "Permanently Banned"}
                   </div>
                   <TooltipArrow className="fill-white"/>
