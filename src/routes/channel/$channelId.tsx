@@ -1,6 +1,6 @@
 import {createFileRoute, Link, redirect, useLoaderData,} from '@tanstack/react-router'
 import Cookies from 'js-cookie'
-import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState} from 'react'
+import React, {Dispatch, ReactNode, SetStateAction, useCallback, useEffect, useMemo, useState} from 'react'
 import {ResizableHandle, ResizablePanel, ResizablePanelGroup,} from '@/components/ui/resizable.tsx'
 import {CLIENT_ID, TIME_AGO} from "@/lib/constants.ts";
 import {
@@ -26,7 +26,6 @@ import {
 import {Button} from "@/components/ui/button.tsx";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -60,7 +59,19 @@ import {
 } from "@/components/ui/tooltip.tsx";
 import {ScrollArea} from "@/components/ui/scroll-area.tsx";
 import {ShieldAlert, Infinity} from "lucide-react";
-
+import {useForm, UseFormProps, UseFormReturn} from "react-hook-form";
+import {z, ZodType} from "zod";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {banSchema, pollSchema, timeoutSchema, warnSchema} from "@/lib/formSchema.ts";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form.tsx";
 //region Types
 type Moderation = {
   channelLogin: string
@@ -304,11 +315,12 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
   moderation: Moderation,
   deleteFn: () => void
 }) {
-  const exists = data?.[moderation.userId] != undefined || loading;
   const {toast} = useToast();
   const {channelId} = Route.useParams();
   const token = Cookies.get('twitch');
   const selfId = Cookies.get('self');
+
+  const exists = useMemo(() => data?.[moderation.userId] != undefined || loading, [data, moderation, loading]);
 
   const dismiss = useMutation({
     mutationFn: (dismissData: { userId: number }) => {
@@ -348,13 +360,13 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
       })
     }
   });
-  const banUser = async (duration: number, reasonElement: HTMLInputElement) => {
+  const banUser = async (duration: number, reasonElement: string) => {
     const actionName = duration > 0 ? "timeout" : "ban"
     const actionNamePast = duration > 0 ? "timed-out" : "banned"
     try {
       const resp = await ban.mutateAsync({
         "user_id": moderation.userId,
-        "reason": reasonElement.value,
+        "reason": reasonElement,
         "duration": duration > 0 ? duration : undefined
       })
       if (resp.ok) {
@@ -588,143 +600,225 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
           </AlertDialogContent>
         </AlertDialog>
 
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button h6sb icon={<ShieldAlert/>}>Warn</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Warning Details</DialogTitle>
-              <DialogDescription>
-                Customize the warning here. Click execute once done.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="warnreason" className="text-right">
-                  Reason
-                </Label>
-                <Input id="warnreason" className="col-span-3" defaultValue="Please comply with the chat rules"/>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="brand" onClick={async () => {
-                  const reason = document.getElementById("warnreason") as HTMLInputElement
-                  try {
-                    const resp = await warn.mutateAsync({user_id: moderation.userId, reason: reason.value})
-                    if (resp.ok) {
-                      toast({
-                        description: `Successfully warned ${moderation.userName}`
-                      })
-                      try {
-                        const resp = await dismiss.mutateAsync({ userId: moderation.userId });
-                        if (resp.ok) {
-                          deleteFn()
-                        } else {
-                          const body = await resp.json()
-                          console.error(`Failed to delete logs of ${moderation.userName} due to ${body.error}`)
-                        }
-                      } catch (e) {
-                        console.error(`Could not delete logs of ${moderation.userName}`, e)
-                      } finally {
-                        dismiss.reset()
-                      }
-                    } else {
-                      const body = await resp.json()
-                      toast({
-                        variant: "destructive",
-                        title: "Uh oh! Something went wrong.",
-                        description: `Failed to warn ${moderation.userName}: ${body.error}`
-                      })
-                    }
-                  } catch (e) {
-                    console.error(e)
-                    toast({
-                      variant: "destructive",
-                      title: "Uh oh! Something went wrong.",
-                      description: `Could not warn ${moderation.userName}; try again later`
-                    })
-                  } finally {
-                    warn.reset()
+        {/* ===== WARN ===== */}
+        <Modal
+          schema={warnSchema}
+          formProps={{defaultValues: {reason: "Please comply with the chat rules"}}}
+          render={form => (
+            <FormField
+              control={form.control}
+              name={"reason"}
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel className={"font-bold"}>Reason</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Specify a reason" {...field} />
+                  </FormControl>
+                  <FormMessage/>
+                </FormItem>
+              )}
+            />
+          )}
+          onSubmit={async value => {
+            try {
+              const resp = await warn.mutateAsync({user_id: moderation.userId, reason: value.reason})
+              if (resp.ok) {
+                toast({
+                  description: `Successfully warned ${moderation.userName}`
+                })
+                try {
+                  const resp = await dismiss.mutateAsync({ userId: moderation.userId });
+                  if (resp.ok) {
+                    deleteFn()
+                  } else {
+                    const body = await resp.json()
+                    console.error(`Failed to delete logs of ${moderation.userName} due to ${body.error}`)
                   }
-                }}>
-                  Execute
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                } catch (e) {
+                  console.error(`Could not delete logs of ${moderation.userName}`, e)
+                } finally {
+                  dismiss.reset()
+                }
+              } else {
+                const body = await resp.json()
+                toast({
+                  variant: "destructive",
+                  title: "Uh oh! Something went wrong.",
+                  description: `Failed to warn ${moderation.userName}: ${body.error}`
+                })
+              }
+            } catch (e) {
+              console.error(e)
+              toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: `Could not warn ${moderation.userName}; try again later`
+              })
+            } finally {
+              warn.reset()
+            }
+          }}
+        >
+          <Button h6sb icon={<ShieldAlert/>}>Warn</Button>
+          <>Warning Details</>
+          <>Customize the warning here. Click execute once done.</>
+        </Modal>
 
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button h6sb icon={<Prohibited12Regular/>}>Ban</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Ban Details</DialogTitle>
-              <DialogDescription>
-                Customize the ban reason here. Click execute once done.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="banreason" className="text-right">
-                  Reason
-                </Label>
-                <Input id="banreason" defaultValue="Reinstated shared chat ban" className="col-span-3"/>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" onClick={async () => await banUser(-1, document.getElementById("banreason") as HTMLInputElement)}>
-                  Execute
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* ===== BAN ===== */}
+        <Modal
+          schema={banSchema}
+          formProps={{defaultValues: {reason: "Reinstated shared chat ban"}}}
+          onSubmit={async value => await banUser(-1, value.reason)}
+          render={form => (
+            <FormField
+              control={form.control}
+              name={"reason"}
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel className={"font-bold"}>Reason</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Specify a reason" {...field} />
+                  </FormControl>
+                  <FormMessage/>
+                </FormItem>
+              )}
+            />
+          )}
+        >
+          <Button h6sb icon={<Prohibited12Regular/>}>Ban</Button>
+          <>Ban Details</>
+          <>Customize the ban reason here. Click execute once done.</>
+        </Modal>
 
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button h6sb icon={<Clock12Regular/>}>Timeout</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Timeout Details</DialogTitle>
-              <DialogDescription>
-                Customize the timeout here. Click execute once done.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="timeoutduration" className="text-right">
-                  Seconds
-                </Label>
-                <Input id="timeoutduration" type="number" defaultValue="600" min="1" max="1209600" className="col-span-3"/>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="timeoutreason" className="text-right">
-                  Reason
-                </Label>
-                <Input id="timeoutreason" defaultValue="Reinstated shared chat timeout" className="col-span-3"/>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" onClick={async () => {
-                  const duration = document.getElementById("timeoutduration") as HTMLInputElement
-                  const reason = document.getElementById("timeoutreason") as HTMLInputElement
-                  await banUser(duration.valueAsNumber, reason)
-                }}>
-                  Execute
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* ===== TIMEOUT ====== */}
+        <Modal
+          schema={timeoutSchema}
+          onSubmit={async value => await banUser(value.duration, value.reason)}
+          formProps={{defaultValues: {duration: 600, reason: "Reinstated shared chat timeout"}}}
+          render={form => (
+            <>
+              <FormField
+                control={form.control}
+                name={"reason"}
+                render={({field}) => (
+                  <FormItem>
+                    <FormLabel className={"font-bold"}>Reason</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Specify a reason" {...field} />
+                    </FormControl>
+                    <FormMessage/>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name={"duration"}
+                render={({field}) => (
+                  <FormItem>
+                    <FormLabel className={"font-bold"}>Duration</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" max="1209600" placeholder="Specify the duration" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Duration in seconds
+                    </FormDescription>
+                    <FormMessage/>
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+        >
+          <Button h6sb icon={<Clock12Regular/>}>Timeout</Button>
+          <>Timeout Details</>
+          <>Customize the timeout reason here. Click execute once done.</>
+        </Modal>
 
-        <Dialog>
+        {/* ===== POLL ======*/}
+        <Modal
+          schema={pollSchema}
+          onSubmit={async value => {
+            try {
+              const resp = await poll.mutateAsync({
+                title: value.title,
+                duration: value.duration,
+                channelPoints: value.channelPoints
+              })
+              if (resp.ok) {
+                toast({
+                  description: `Started poll about ${moderation.userName}`
+                })
+                window.open(`https://www.twitch.tv/popout/${moderation.channelLogin}/poll`, "_blank")
+              } else {
+                const body = await resp.json()
+                toast({
+                  variant: "destructive",
+                  title: "Uh oh! Something went wrong.",
+                  description: `Failed to start poll about ${moderation.userName}: ${body.message}`
+                })
+              }
+            } catch (e) {
+              console.error(e)
+              toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: `Could not start poll about ${moderation.userName}; try again later`
+              })
+            } finally {
+              poll.reset()
+            }
+          }}
+          formProps={{defaultValues: {title: "Should we punish this chatter?", duration: 60, channelPoints: 0}}}
+          render={form => (
+            <>
+              <FormField
+                control={form.control}
+                name={"title"}
+                render={({field}) => (
+                  <FormItem>
+                    <FormLabel className={"font-bold"}>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Specify the title" {...field} />
+                    </FormControl>
+                    <FormMessage/>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name={"duration"}
+                render={({field}) => (
+                  <FormItem>
+                    <FormLabel className={"font-bold"}>Duration</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="15" max="1800" placeholder="Specify the duration" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Duration in seconds
+                    </FormDescription>
+                    <FormMessage/>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name={"channelPoints"}
+                render={({field}) => (
+                  <FormItem>
+                    <FormLabel className={"font-bold"}>Channel points</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" max="1000000" placeholder="Channel points cost" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Setting it to 0 disables channel point voting
+                    </FormDescription>
+                    <FormMessage/>
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+        >
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -740,79 +834,61 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Poll Details</DialogTitle>
-              <DialogDescription>
-                Customize the poll here. Click execute once done.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="polltitle" className="text-right">
-                  Title
-                </Label>
-                <Input id="polltitle" defaultValue="Should we punish this chatter?" className="col-span-3"/>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="pollduration" className="text-right">
-                  Seconds
-                </Label>
-                <Input id="pollduration" type="number" defaultValue="60" min="0" max="1800" className="col-span-3"/>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="pollpoints" className="text-right">
-                  Channel Points
-                </Label>
-                <Input id="pollpoints" type="number" defaultValue="0" min="0" max="1000000" className="col-span-3"/>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" onClick={async () => {
-                  const titleEl = document.getElementById("polltitle") as HTMLInputElement
-                  const secondsEl = document.getElementById("pollduration") as HTMLInputElement
-                  const pointsEl = document.getElementById("pollpoints") as HTMLInputElement
-                  try {
-                    const resp = await poll.mutateAsync({
-                      title: titleEl.value,
-                      duration: secondsEl.valueAsNumber,
-                      channelPoints: pointsEl.valueAsNumber
-                    })
-                    if (resp.ok) {
-                      toast({
-                        description: `Started poll about ${moderation.userName}`
-                      })
-                      window.open(`https://www.twitch.tv/popout/${moderation.channelLogin}/poll`, "_blank")
-                    } else {
-                      const body = await resp.json()
-                      toast({
-                        variant: "destructive",
-                        title: "Uh oh! Something went wrong.",
-                        description: `Failed to start poll about ${moderation.userName}: ${body.message}`
-                      })
-                    }
-                  } catch (e) {
-                    console.error(e)
-                    toast({
-                      variant: "destructive",
-                      title: "Uh oh! Something went wrong.",
-                      description: `Could not start poll about ${moderation.userName}; try again later`
-                    })
-                  } finally {
-                    poll.reset()
-                  }
-                }}>
-                  Execute
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          <>Poll Details</>
+          <>Customize the poll here. Click execute once done.</>
+        </Modal>
       </div>
     </div>
   );
+}
+
+function /*component*/ Modal<S extends ZodType>({schema, formProps, onSubmit, render, children}: {
+  schema: S,
+  formProps?: UseFormProps<z.infer<S>>,
+  onSubmit?: (value: z.infer<S>) => void
+  render?: (form: UseFormReturn) => React.ReactElement
+  children: ReactNode[]
+}) {
+  const [open, setOpen] = useState(false)
+  const form: UseFormReturn = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    ...formProps
+  })
+
+  if (children.length != 3) {
+    throw "Must contain 3 children"
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {children[0]}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{children[1]}</DialogTitle>
+          <DialogDescription>
+            {children[2]}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <Form {...form}>
+            <form id={"warnForm"} className={"flex flex-col gap-8"} onSubmit={form.handleSubmit((data) => {
+              if (onSubmit) onSubmit(data)
+              setOpen(false);
+            })}>
+              {render ? render(form) : null}
+            </form>
+          </Form>
+        </div>
+        <DialogFooter>
+          <Button form={"warnForm"} variant="brand" type={"submit"} disabled={!form.formState.isValid}>
+            Execute
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 function /*component*/ Message({chatter, message}: { chatter: string, message: Message }) {

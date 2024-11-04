@@ -34,10 +34,6 @@ function /*component*/ FeatureCard({children}: {children: ReactNode[]}) {
   );
 }
 
-function /*component*/ Noop({children}: {children?: ReactNode | undefined}) {
-  return <>{children}</>
-}
-
 function Index() {
   const token = Cookies.get("twitch");
   const connected = !!token;
@@ -80,16 +76,16 @@ function Index() {
 
           <div className="flex flex-row gap-8 py-20 items-center w-full justify-center">
             <FeatureCard>
-              <Noop>Context-driven</Noop>
-              <Noop>Our interface includes user details, their chat messages, and more!</Noop>
+              <>Context-driven</>
+              <>Our interface includes user details, their chat messages, and more!</>
             </FeatureCard>
             <FeatureCard>
-              <Noop>Feature-rich</Noop>
-              <Noop>Beyond bans, timeouts, and warnings, you can even poll your chat's opinion.</Noop>
+              <>Feature-rich</>
+              <>Beyond bans, timeouts, and warnings, you can even poll your chat's opinion.</>
             </FeatureCard>
             <FeatureCard>
-              <Noop>Streamer Mode</Noop>
-              <Noop>Hide profile pictures and mod identities so it's safer to stream our tool!</Noop>
+              <>Streamer Mode</>
+              <>Hide profile pictures and mod identities so it's safer to stream our tool!</>
             </FeatureCard>
           </div>
 

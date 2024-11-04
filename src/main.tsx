@@ -16,8 +16,8 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       experimental_prefetchInRender: true,
-      gcTime: 1000 * 60 * 60 * 2, // 2 hours
-      staleTime: 1000 * 60 // 1 minute
+      gcTime: 15 * 60 * 10000, // 15 minutes
+      staleTime: 5 * 60 * 1000 // 5 minutes
     },
   }
 })
