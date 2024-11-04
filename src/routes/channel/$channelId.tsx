@@ -541,7 +541,7 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
         }
         {
           moderation.messages.length > 0 ?
-            <Message chatter={streamerMode ? "[redacted]" : moderation.modLogin} message={
+            <Message gray={true} chatter={streamerMode ? "[redacted]" : moderation.modLogin} message={
               Object.assign({}, moderation.messages[0], {
                 text: moderation.duration > 0
                   ? `timed-out ${moderation.userName} for ${localizedDuration(moderation.duration)} ${moderation.reason ? `with reason: ${moderation.reason}` : ""}`
@@ -891,13 +891,13 @@ function /*component*/ Modal<S extends ZodType>({schema, formProps, onSubmit, re
   )
 }
 
-function /*component*/ Message({chatter, message}: { chatter: string, message: Message }) {
+function /*component*/ Message({chatter, message, gray = false}: { chatter: string, message: Message, gray?: boolean }) {
   return (
     <div className={"py-2 word-break"}>
       <span className={"text-hinted-gray-9 mr-2"}>{localizedTime(message.timestamp * 1000)}</span>
-      <span className={"font-bold"}>{chatter}</span>
-      <span>:&nbsp;</span>
-      <span>{message.text}</span>
+      <span className={cn("font-bold", {"text-hinted-gray-9": gray})}>{chatter}</span>
+      <span className={cn({"text-hinted-gray-9": gray})}>:&nbsp;</span>
+      <span className={cn({"text-hinted-gray-9": gray})}>{message.text}</span>
       <span className={"ml-2 text-hinted-gray-9"}>(Sent in {message.sourceLogin})</span>
     </div>
   );
