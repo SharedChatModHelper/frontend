@@ -58,7 +58,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip.tsx";
 import {ScrollArea} from "@/components/ui/scroll-area.tsx";
-import {ShieldAlert} from "lucide-react";
+import {ShieldAlert, Infinity} from "lucide-react";
 import {useForm, UseFormProps, UseFormReturn} from "react-hook-form";
 import {z, ZodType} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -72,7 +72,6 @@ import {
   FormLabel,
   FormMessage
 } from "@/components/ui/form.tsx";
-
 //region Types
 type Moderation = {
   channelLogin: string
@@ -182,7 +181,7 @@ function /*component*/ Channel() {
     }
 
     setModerations(copy);
-  }, [moderations, moderationMap, chatter]);
+  }, [moderations, moderationMap, chatter, setChatter]);
 
   const getModeration = (id: number): Moderation => {
     return moderations[moderationMap[id]];
@@ -487,9 +486,23 @@ function /*component*/ MessageWindow({data, loading, streamerMode, moderation, d
 
         <div className={"flex flex-col basis-full"}>
           <p>Duration</p>
-          <p className={"font-semibold"}>
-            {moderation.duration != -1 ? localizedDuration(moderation.duration) : "Infinite"}
-          </p>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className={"font-semibold overflow-hidden line-clamp-1 w-fit data-[state=delayed-open]:cursor-default"}>
+                  {moderation.duration != -1 ? localizedDuration(moderation.duration) : <Infinity className={"h-8"}/>}
+                </p>
+              </TooltipTrigger>
+              <TooltipPortal>
+                <TooltipContent>
+                  <div className={"font-semibold max-w-5xl leading-[1.2] text-6"}>
+                    {moderation.duration > 0 ? `${moderation.duration} seconds` : "Permanently Banned"}
+                  </div>
+                  <TooltipArrow className="fill-white"/>
+                </TooltipContent>
+              </TooltipPortal>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <div className={"flex flex-col"} style={{flexBasis: "175%"}}>
           <p>Reason</p>
