@@ -11,7 +11,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-bg-hover",
-        brand: "bg-twitch-purple hover:bg-twitch-purple-8 hover:border-transparent",
+        brand: "bg-twitch-purple hover:bg-twitch-purple-8 hover:border-transparent disabled:bg-bg-hover",
         destructive:
           "bg-brand-accent-ruby hover:bg-brand-accent-ruby/80 hover:border-transparent",
         outline:
