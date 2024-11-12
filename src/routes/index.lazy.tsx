@@ -74,7 +74,7 @@ function Index() {
             </SimpleButton>
           </div>
 
-          <div className="flex flex-row gap-8 py-20 items-center w-full justify-center">
+          <div className="flex flex-row gap-8 py-16 items-center w-full justify-center">
             <FeatureCard>
               <>Context-driven</>
               <>Our interface includes user details, their chat messages, and more!</>
@@ -90,7 +90,7 @@ function Index() {
           </div>
 
           <div className="flex justify-center items-start mb-8">
-            <Accordion type="single" collapsible className="w-1/2">
+            <Accordion type="single" collapsible className="w-2/3 lg:w-1/2">
               <AccordionItem value="item-1">
                 <AccordionTrigger className="text-hinted-gray-12">
                   What does it do?
@@ -136,6 +136,27 @@ function Index() {
               </AccordionItem>
               <AccordionItem value="item-5">
                 <AccordionTrigger className="text-hinted-gray-12">
+                  How does it differ from Shared Ban Info?
+                </AccordionTrigger>
+                <AccordionContent>
+                  While Twitch's Shared Ban Info feature can be useful, our tool is more <strong>flexible</strong>, <strong>scalable</strong>, and <strong>proactive</strong>.
+                  <br/><br/>
+                  Here, a broadcaster can simply authorize the app <strong>once</strong>, and leave moderation to their team.<br/>
+                  With Shared Ban Info, broadcasters need to request data sharing from <em>every</em>  Shared Chat participant they ever interact with.
+                  Those other broadcasters may not bother to accept the request, or could be constrained by the 30 channel limit for Shared Ban Info.
+                  <br/><br/>
+                  Also, our tool allows <strong>individualized</strong> actions (ban, timeout, warn, restrict, monitor) whereas Shared Ban Info institutes blanket reactions (monitor or restrict).
+                  With blunt instruments, the suspicious treatment can be too permissive or too restrictive depending on the context.
+                  Our tool allows moderators to take the appropriate action with the relevant context.
+                  <br/><br/>
+                  Further, our tool shows <strong>both</strong> shared bans and timeouts, while Shared Ban Info only reacts to bans.
+                  While short timeouts are usually benign, long timeouts (e.g., 14 days) are likely to be reinstated in the shared channels (when given the choice).
+                  <br/><br/>
+                  That said, using both tools is optimal so you can benefit from shared mod comments while taking proactive, individualized decisions.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="item-6">
+                <AccordionTrigger className="text-hinted-gray-12">
                   How long is the data stored?
                 </AccordionTrigger>
                 <AccordionContent>
@@ -145,7 +166,7 @@ function Index() {
                   By using the app, you are consenting to our data storage policy.
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="item-6">
+              <AccordionItem value="item-7">
                 <AccordionTrigger className="text-hinted-gray-12">
                   Who built it?
                 </AccordionTrigger>
@@ -159,7 +180,7 @@ function Index() {
                   The name Twitch as well as related names, marks, emblems, and images are registered trademarks of their respective owners, including Twitch Interactive Inc.
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="item-7">
+              <AccordionItem value="item-8">
                 <AccordionTrigger className="text-hinted-gray-12">
                   How do I get started?
                 </AccordionTrigger>
