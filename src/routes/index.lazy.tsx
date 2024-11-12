@@ -1,7 +1,7 @@
 import {createLazyFileRoute, Link} from '@tanstack/react-router'
 import {SimpleButton} from "@/components/ui/button.tsx";
 import {AUTH_URL} from "@/lib/constants.ts";
-import {Check, Twitch} from "lucide-react";
+import {Check, Twitch, Youtube} from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -47,31 +47,47 @@ function Index() {
             <h4 className="italic text-hinted-gray-9">
               A moderator's best friend for Shared Chat.
             </h4>
-            <SimpleButton h6sb variant={connected ? "default" : "brand"} asChild className={"cursor-pointer text-inherit hover:text-inherit hover:decoration-none"}>
-              {
-                !connected ?
-                  <a href={AUTH_URL}>
+            <div className="flex flex-row gap-8">
+              <SimpleButton h6sb variant={connected ? "default" : "brand"} asChild className={"cursor-pointer text-inherit hover:text-inherit hover:decoration-none"}>
+                {
+                  !connected ?
+                    <a href={AUTH_URL}>
+                      <div className={"px-2 min-h-8 flex flex-row justify-between"}>
+                        <h6 className={"font-semibold"}>Login with Twitch</h6>
+                        <div className={"pl-4 flex"}>
+                          <div className={"h-8 w-8 m-auto justify-center items-center inline-flex"}>
+                            <Twitch/>
+                          </div>
+                        </div>
+                      </div>
+                    </a> :
+                    <Link href={"/app"} className="text-inherit hover:text-inherit">
+                      <div className={"px-2 min-h-8 flex flex-row justify-between"}>
+                        <h6 className={"font-semibold"}>Access app</h6>
+                        <div className={"pl-4 flex"}>
+                          <div className={"h-8 w-8 m-auto justify-center items-center inline-flex"}>
+                            <IconGavel/>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                }
+              </SimpleButton>
+              <SimpleButton h6sb variant="default">
+                {
+                  <a href="https://www.youtube.com/watch?v=xg2sgLNiB9g" target="_blank" rel="noreferrer noopener"  className="text-inherit hover:text-inherit hover:decoration-none">
                     <div className={"px-2 min-h-8 flex flex-row justify-between"}>
-                      <h6 className={"font-semibold"}>Login with Twitch</h6>
+                      <h6 className={"font-semibold"}>Watch Explainer</h6>
                       <div className={"pl-4 flex"}>
                         <div className={"h-8 w-8 m-auto justify-center items-center inline-flex"}>
-                          <Twitch/>
+                          <Youtube/>
                         </div>
                       </div>
                     </div>
-                  </a> :
-                  <Link href={"/app"} className="text-inherit hover:text-inherit">
-                    <div className={"px-2 min-h-8 flex flex-row justify-between"}>
-                      <h6 className={"font-semibold"}>Access app</h6>
-                      <div className={"pl-4 flex"}>
-                        <div className={"h-8 w-8 m-auto justify-center items-center inline-flex"}>
-                          <IconGavel/>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-              }
-            </SimpleButton>
+                  </a>
+                }
+              </SimpleButton>
+            </div>
           </div>
 
           <div className="flex flex-row gap-8 py-16 items-center w-full justify-center">
