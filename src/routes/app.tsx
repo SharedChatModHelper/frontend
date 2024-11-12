@@ -101,6 +101,7 @@ function /*component*/ App() {
         <Button variant="destructive" onClick={() => {
           Cookies.remove("twitch");
           Cookies.remove("self");
+          queryClient.clear();
           router.history.push("/");
         }}>
           Logout
