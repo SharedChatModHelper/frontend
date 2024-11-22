@@ -159,6 +159,10 @@ h6 {
   animation: fadeOut 200ms ease-out
 }
 
+div[data-radix-scroll-area-viewport] > div {
+  display: block !important;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
