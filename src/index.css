@@ -151,6 +151,10 @@ h6 {
   content: "";
 }
 
+div:has(> div.parent_full-h) {
+  height: 100%;
+}
+
 .scrollbar[data-state="visible"] {
   animation: fadeIn 200ms ease-out
 }
